@@ -46,6 +46,11 @@ module FSCMS
         # The list of deliverables built
         # map< Deliverable, nil >
         @DeliverablesBuilt = {}
+        lLstDeliverables.uniq.each do |ioDeliverable|
+          if (ioDeliverable.AlreadyBuilt)
+            @DeliverablesBuilt[ioDeliverable] = nil
+          end
+        end
         # Build each deliverable
         lLstDeliverables.uniq.each do |ioDeliverable|
           buildDeliverableAndDependencies(ioDeliverable)
@@ -98,11 +103,13 @@ module FSCMS
           FileUtils::mkdir_p(ioDeliverable.RealDir)
           # Execute the process
           changeDir(lRealProcessDir) do
+            logDebug "Execute command \"#{lRealCmd}\" from \"#{lRealProcessDir}\"..."
             lSuccess = system(lRealCmd)
             lErrorCode = $?
             if (lSuccess != true)
               raise RuntimeError.new("Error while executing \"#{lRealCmd}\" from \"#{lRealProcessDir}\": #{lErrorCode}")
             end
+            logDebug "Command \"#{lRealCmd}\" from \"#{lRealProcessDir}\" completed."
           end
           @DeliverablesBuilt[ioDeliverable] = nil
         end

@@ -73,6 +73,18 @@ module FSCMS
         end
       end
 
+      # Clone this Context
+      #
+      # Return:
+      # * _Context_: New context, cloned
+      def clone
+        rContext = Context.new
+
+        rContext.mergeWithContext(self)
+
+        return rContext
+      end
+
     end
     
     # The database object storing info about a Type
@@ -185,7 +197,7 @@ module FSCMS
       # * *iRealDir* (_String_): The real directory
       # * *iContext* (_Context_): The context of this object
       def initialize(iType, iRealDir, iContext)
-        @Type, @RealDir, @Context = iType, iRealDir, iContext
+        @Type, @RealDir, @Context = iType, iRealDir, iContext.clone
         @VersionedObjects = nil
       end
 
@@ -311,6 +323,10 @@ module FSCMS
       # The real directory
       #   String
       attr_accessor :RealDir
+
+      # Is the deliverable already built ?
+      #   Boolean
+      attr_reader :AlreadyBuilt
       
       # Constructor
       #
@@ -319,13 +335,14 @@ module FSCMS
       # * *iRealDir* (_String_): The real directory containing this deliverable
       # * *iContext* (_Context_): The deliverable context
       def initialize(iVersionedObject, iRealDir, iContext)
-        @VersionedObject, @RealDir, @Context = iVersionedObject, iRealDir, iContext
+        @VersionedObject, @RealDir, @Context = iVersionedObject, iRealDir, iContext.clone
         # Set forced aliases
         @Context.mergeWithHashContext( {
           :Aliases => {
-            'DeliverableDir' => iRealDir
+            'DeliverableDir' => @RealDir
           }
         } )
+        @AlreadyBuilt = File.exists?(@RealDir)
       end
       
     end

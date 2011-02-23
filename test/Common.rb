@@ -27,11 +27,15 @@ module FSCMSTest
       lRepoSrcDir = "#{File.dirname(__FILE__)}/Repositories/#{iRepository}"
       assert(File.exists?(lRepoSrcDir))
       lRepoDstDir = "#{Dir.tmpdir}/FSCMSTest/#{iRepository}"
+      # Clean the repository if it existed before
+      if (File.exists?(lRepoDstDir))
+        FileUtils::rm_rf(lRepoDstDir)
+      end
       FileUtils::mkdir_p(File.dirname(lRepoDstDir))
       FileUtils::copy_entry(lRepoSrcDir, lRepoDstDir)
       # Change current dir and call client code
       changeDir(lRepoDstDir) do
-        yield
+        yield(lRepoDstDir)
       end
       # Delete temporary directory
       FileUtils::rm_rf(lRepoDstDir)
