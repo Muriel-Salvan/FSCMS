@@ -3,8 +3,6 @@
 # Licensed under the terms specified in LICENSE file. No warranty is provided.
 #++
 
-require 'Common'
-
-Dir.glob("#{File.expand_path(File.dirname(__FILE__))}/TestCases/**/*.rb").each do |iTestFileName|
-  require iTestFileName
+File.open("#{ARGV[0]}/BuiltFile", 'w') do |oFile|
+  oFile << Dir.getwd
 end

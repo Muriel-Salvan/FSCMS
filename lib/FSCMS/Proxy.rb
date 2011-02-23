@@ -40,8 +40,9 @@ module FSCMS
           # The first token is the type name
           lTypeName = iTargetToken
         elsif (lVersionName == nil)
-          if ((iTargetToken[0] >= 48) and
-              (iTargetToken[0] <= 57))
+          lFirstChar = iTargetToken.getbyte(0)
+          if ((lFirstChar >= 48) and
+              (lFirstChar <= 57))
             # This token is the version
             lVersionName = iTargetToken
           else
@@ -83,6 +84,30 @@ module FSCMS
       end
 
       return rDeliverables
+    end
+
+    # Replace aliases in a string
+    #
+    # Parameters:
+    # * *iStr* (_String_): The string containing aliases
+    # * *iAliases* (<em>map<String,String></em>): The aliases definitions
+    # Return:
+    # * _String_: The string without aliases
+    def replaceAliases(iStr, iAliases)
+      rStr = iStr.clone
+
+      lMatch = rStr.match(/^(.*)@\{([^\}]*)\}(.*)$/)
+      while (lMatch != nil)
+        lAliasName = lMatch[2]
+        if (iAliases[lAliasName] == nil)
+          raise RuntimeError.new("Unknown alias #{lAliasName} in string #{iStr}. Current aliases are: #{iAliases.inspect}.")
+        else
+          rStr = "#{lMatch[1]}#{iAliases[lAliasName]}#{lMatch[3]}"
+        end
+        lMatch = rStr.match(/^(.*)@\{([^\}]*)\}(.*)$/)
+      end
+
+      return rStr
     end
 
   end

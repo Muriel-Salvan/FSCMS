@@ -5,6 +5,8 @@
 
 require 'optparse'
 require 'date'
+require 'rUtilAnts/Misc'
+RUtilAnts::Misc::initializeMisc
 require 'FSCMS/Proxy'
 require 'FSCMS/Database'
 

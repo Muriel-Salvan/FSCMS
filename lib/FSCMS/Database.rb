@@ -119,6 +119,7 @@ module FSCMS
           parseIDDirs(@RealDir, @Context).each do |iID, iIDInfo|
             iRealDir, iContext = iIDInfo
             @Objects[iID] = ObjectInfo.new(self, "#{@RealDir}/#{iRealDir}", iContext)
+            logDebug "Found object #{@RealDir}/#{iRealDir}"
           end
         end
       end
@@ -135,19 +136,24 @@ module FSCMS
 
         Dir.glob("#{iRootDir}/*").each do |iDirName|
           lDirToken = File.basename(iDirName)
-          lIDToken = lDirToken.split(' ')[0]
-          if ((lIDToken[0] >= 48) and
-              (lIDToken[0] <= 57))
+          lFirstChar = lDirToken.getbyte(0)
+          if ((lFirstChar >= 48) and
+              (lFirstChar <= 57))
             # We have the version directory
-            rIDs[[]] = [ lDirToken, iRootContext ]
+            rIDs[[]] = [ '', iRootContext ]
           else
             # A sub-directory
+            lIDToken = lDirToken.split(' ')[0]
             lContext = Context.new
             lContext.mergeWithContext(iRootContext)
             lContext.mergeWithDirContext("#{iRootDir}/#{lDirToken}")
             parseIDDirs("#{iRootDir}/#{lDirToken}", lContext).each do |iSubID, iSubInfo|
               iSubRealDir, iSubContext = iSubInfo
-              rIDs[[lIDToken] + iSubID] = [ "#{lDirToken}/#{iSubRealDir}", iSubContext ]
+              if (iSubRealDir.empty?)
+                rIDs[[lIDToken] + iSubID] = [ lDirToken, iSubContext ]
+              else
+                rIDs[[lIDToken] + iSubID] = [ "#{lDirToken}/#{iSubRealDir}", iSubContext ]
+              end
             end
           end
         end
@@ -201,11 +207,13 @@ module FSCMS
           @VersionedObjects = {}
           Dir.glob("#{@RealDir}/*").each do |iDirName|
             lDirToken = File.basename(iDirName)
-            if ((lDirToken[0] >= 48) and
-                (lDirToken[0] <= 57))
+            lFirstChar = lDirToken.getbyte(0)
+            if ((lFirstChar >= 48) and
+                (lFirstChar <= 57))
               # We have a version directory
               lVersion = lDirToken.split(' ')[0]
               @VersionedObjects[lVersion] = VersionedObject.new(self, "#{@RealDir}/#{lDirToken}")
+              logDebug "Found versioned object #{@RealDir}/#{lDirToken}"
             end
           end
         end
@@ -237,6 +245,13 @@ module FSCMS
         @Object, @RealDir = iObject, iRealDir
         @Deliverables = nil
         @Context = iObject.Context.clone
+        @Context.mergeWithDirContext(@RealDir)
+        # Set forced aliases
+        @Context.mergeWithHashContext( {
+          :Aliases => {
+            'SourceDir' => "#{iRealDir}/Sources"
+          }
+        } )
       end
 
       # Get deliverables
@@ -256,24 +271,28 @@ module FSCMS
         if (@Deliverables == nil)
           @Deliverables = {}
           # First, check deliverables from disk
-          if (File.exists("#{@RealDir}/Deliverables"))
+          if (File.exists?("#{@RealDir}/Deliverables"))
             Dir.glob("#{@RealDir}/Deliverables/*").each do |iDirName|
               lDirToken = File.basename(iDirName)
               lDeliverableName = lDirToken.split(' ')[0]
               # Find its context
               lContext = @Context.clone
-              if ((@Context[:Deliverables] != nil) and
-                  (@Context[:Deliverables][lDeliverableName] != nil))
-                lContext.mergeWithHashContext(@Context[:Deliverables][lDeliverableName])
+              if ((@Context.Properties[:Deliverables] != nil) and
+                  (@Context.Properties[:Deliverables][lDeliverableName] != nil))
+                lContext.mergeWithHashContext(@Context.Properties[:Deliverables][lDeliverableName])
               end
               @Deliverables[lDeliverableName] = Deliverable.new(self, "#{@RealDir}/Deliverables/#{lDirToken}", lContext)
+              logDebug "Found deliverable from file system #{@RealDir}/Deliverables/#{lDirToken}"
             end
           end
           # Then from the config file
-          if (@Context[:Deliverables] != nil)
-            @Context[:Deliverables].each do |iDeliverableName, iDeliverableContext|
+          if (@Context.Properties[:Deliverables] != nil)
+            @Context.Properties[:Deliverables].each do |iDeliverableName, iDeliverableContext|
               if (@Deliverables[iDeliverableName] == nil)
-                @Deliverables[iDeliverableName] = Deliverable.new(self, "#{@RealDir}/Deliverables/#{iDeliverableName}", iDeliverableContext)
+                lContext = @Context.clone
+                lContext.mergeWithHashContext(iDeliverableContext)
+                @Deliverables[iDeliverableName] = Deliverable.new(self, "#{@RealDir}/Deliverables/#{iDeliverableName}", lContext)
+                logDebug "Found deliverable from metadata #{@RealDir}/Deliverables/#{iDeliverableName}"
               end
             end
           end
@@ -301,6 +320,12 @@ module FSCMS
       # * *iContext* (_Context_): The deliverable context
       def initialize(iVersionedObject, iRealDir, iContext)
         @VersionedObject, @RealDir, @Context = iVersionedObject, iRealDir, iContext
+        # Set forced aliases
+        @Context.mergeWithHashContext( {
+          :Aliases => {
+            'DeliverableDir' => iRealDir
+          }
+        } )
       end
       
     end
@@ -340,7 +365,12 @@ module FSCMS
     # Return:
     # * <em>map<String,VersionedObject></em>: The list of versioned objects, per version
     def getVersionedObjects(iTypeName, iObjectID)
-      return getObjects(iTypeName)[iObjectID].getVersionedObjects
+      lObjects = getObjects(iTypeName)
+      if (lObjects[iObjectID] == nil)
+        raise RuntimeError.new("Unable to get object #{iTypeName}/#{iObjectID.join('/')}")
+      end
+
+      return lObjects[iObjectID].getVersionedObjects
     end
 
     # Get the list of deliverables for a given type name, object ID, version
@@ -352,7 +382,12 @@ module FSCMS
     # Return:
     # * <em>map<String,Deliverable></em>: The list of deliverables, per name
     def getDeliverables(iTypeName, iObjectID, iVersion)
-      return getVersionedObjects(iTypeName, iObjectID)[iVersion].getDeliverables
+      lVersionedObjects = getVersionedObjects(iTypeName, iObjectID)
+      if (lVersionedObjects[iVersion] == nil)
+        raise RuntimeError.new("Unable to get versioned object #{iTypeName}/#{iObjectID.join('/')}/#{iVersion}")
+      end
+
+      return lVersionedObjects[iVersion].getDeliverables
     end
 
     # Get the specified deliverable
@@ -365,7 +400,12 @@ module FSCMS
     # Return:
     # * _Deliverable_: The deliverable
     def getDeliverable(iTypeName, iObjectID, iVersion, iDeliverableName)
-      return getDeliverables(iTypeName, iObjectID, iVersion)[iDeliverableName]
+      lDeliverables = getDeliverables(iTypeName, iObjectID, iVersion)
+      if (lDeliverables[iDeliverableName] == nil)
+        raise RuntimeError.new("Unable to get deliverable #{iTypeName}/#{iObjectID.join('/')}/#{iVersion}/#{iDeliverableName}")
+      end
+
+      return lDeliverables[iDeliverableName]
     end
 
     private

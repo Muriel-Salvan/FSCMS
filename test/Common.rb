@@ -1,0 +1,51 @@
+#--
+# Copyright (c) 2009-2011 Muriel Salvan (murielsalvan@users.sourceforge.net)
+# Licensed under the terms specified in LICENSE file. No warranty is provided.
+#++
+
+require 'test/unit'
+require 'tmpdir'
+require 'fileutils'
+require 'rUtilAnts/Logging'
+RUtilAnts::Logging::initializeLogging('', '')
+require 'FSCMS/Launcher'
+
+$FSCMSTest_RepositoryToolsDir = "#{File.expand_path(File.dirname(__FILE__))}/RepositoryTools"
+
+module FSCMSTest
+
+  module Common
+
+    # Set a given repository as the current.
+    # Set also the current directory in the root of this repository.
+    #
+    # Parameters:
+    # * *iRepositoryName* (_String_): Name of repository to set
+    # * *CodeBlock*: Code called once the repository has been set
+    def setRepository(iRepository)
+      # Copy the whole repository to a temporary directory
+      lRepoSrcDir = "#{File.dirname(__FILE__)}/Repositories/#{iRepository}"
+      assert(File.exists?(lRepoSrcDir))
+      lRepoDstDir = "#{Dir.tmpdir}/FSCMSTest/#{iRepository}"
+      FileUtils::mkdir_p(File.dirname(lRepoDstDir))
+      FileUtils::copy_entry(lRepoSrcDir, lRepoDstDir)
+      # Change current dir and call client code
+      changeDir(lRepoDstDir) do
+        yield
+      end
+      # Delete temporary directory
+      FileUtils::rm_rf(lRepoDstDir)
+    end
+
+    # Run the FSCMS launcher with given parameters
+    #
+    # Parameters:
+    # * *iArgs* (<em>list<String></em>): Arguments
+    def runFSCMS(iArgs)
+      lResult = FSCMS::Launcher.new.execute(iArgs)
+      assert_equal(0, lResult)
+    end
+
+  end
+
+end
