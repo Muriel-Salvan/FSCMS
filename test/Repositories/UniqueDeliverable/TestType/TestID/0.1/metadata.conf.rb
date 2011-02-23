@@ -1,0 +1,6 @@
+{
+  :Deliverables => {
+    'TestDeliverable' => {
+    }
+  }
+}

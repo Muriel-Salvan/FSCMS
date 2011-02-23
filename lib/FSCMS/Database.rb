@@ -1,0 +1,407 @@
+#--
+# Copyright (c) 2009-2011 Muriel Salvan (murielsalvan@users.sourceforge.net)
+# Licensed under the terms specified in LICENSE file. No warranty is provided.
+#++
+
+module FSCMS
+
+  class Database
+
+    # The database object storing a context.
+    # A context is made of aliases, references, properties that are gathered through metadata configuration files.
+    # A context automatically includes information from its parent contexts.
+    class Context
+
+      # The list of aliases
+      #   map< String, String >
+      attr_accessor :Aliases
+
+      # The list of processes
+      #   map< Symbol, Object >
+      attr_accessor :Processes
+
+      # The other properties of this context
+      #   map< Symbol, Object >
+      attr_accessor :Properties
+
+      # Constructor
+      def initialize
+        @Aliases = {}
+        @Processes = {}
+        @Properties = {}
+      end
+
+      # Merge with a context from a directory
+      #
+      # Parameters:
+      # * *iDirName* (_String_): Directory to merge context with
+      def mergeWithDirContext(iDirName)
+        lContextFileName = "#{iDirName}/metadata.conf.rb"
+        if (File.exists?(lContextFileName))
+          File.open(lContextFileName, 'r') do |iFile|
+            mergeWithHashContext(eval(iFile.read))
+          end
+        end
+      end
+
+      # Merge with a context
+      #
+      # Parameters:
+      # * *iContext* (_Context_): The context to merge with
+      def mergeWithContext(iContext)
+        @Processes.merge!(iContext.Processes)
+        @Aliases.merge!(iContext.Aliases)
+        @Properties.merge!(iContext.Properties)
+      end
+
+      # Merge with a hashed context
+      #
+      # Parameters:
+      # * *iContext* (<em>map<Symbol,Object></em>): The context to merge with
+      def mergeWithHashContext(iContext)
+        iContext.each do |iKey, iValue|
+          case iKey
+          when :Processes
+            # Define new processes
+            @Processes.merge!(iValue)
+          when :Aliases
+            # Define new aliases
+            @Aliases.merge!(iValue)
+          else
+            @Properties[iKey] = iValue
+          end
+        end
+      end
+
+    end
+    
+    # The database object storing info about a Type
+    class Type
+      
+      # The associated context
+      #   Context
+      attr_accessor :Context
+      
+      # The map of objects
+      #   map< list< String >, ObjectInfo >
+      attr_accessor :Objects
+      
+      # Constructor
+      #
+      # Parameters:
+      # * *iRealDir* (_String_): The directory containing this type
+      # * *iContext* (_Context_): The parent context
+      def initialize(iRealDir, iContext)
+        @RealDir = iRealDir
+        @Context = Context.new
+        @Objects = nil
+        # Read its context
+        @Context.mergeWithContext(iContext)
+        @Context.mergeWithDirContext(@RealDir)
+      end
+
+      # Get objects
+      #
+      # Return:
+      # * <em>map<list<String>,ObjectInfo></em>: Get the list of objects
+      def getObjects
+        readObjects
+
+        return @Objects
+      end
+
+      private
+
+      # Read objects
+      def readObjects
+        if (@Objects == nil)
+          @Objects = {}
+          parseIDDirs(@RealDir, @Context).each do |iID, iIDInfo|
+            iRealDir, iContext = iIDInfo
+            @Objects[iID] = ObjectInfo.new(self, "#{@RealDir}/#{iRealDir}", iContext)
+          end
+        end
+      end
+
+      # Get the list of ID directories with their corresponding real directories under a given root directory
+      #
+      # Parameters:
+      # * *iRootDir* (_String_): The directory
+      # * *iRootContext* (_Context_): The context of this root directory
+      # Return:
+      # * <em>map<list<String>,[String,Context]></em>: The list of IDs, and corresponding real directories and context
+      def parseIDDirs(iRootDir, iRootContext)
+        rIDs = {}
+
+        Dir.glob("#{iRootDir}/*").each do |iDirName|
+          lDirToken = File.basename(iDirName)
+          lIDToken = lDirToken.split(' ')[0]
+          if ((lIDToken[0] >= 48) and
+              (lIDToken[0] <= 57))
+            # We have the version directory
+            rIDs[[]] = [ lDirToken, iRootContext ]
+          else
+            # A sub-directory
+            lContext = Context.new
+            lContext.mergeWithContext(iRootContext)
+            lContext.mergeWithDirContext("#{iRootDir}/#{lDirToken}")
+            parseIDDirs("#{iRootDir}/#{lDirToken}", lContext).each do |iSubID, iSubInfo|
+              iSubRealDir, iSubContext = iSubInfo
+              rIDs[[lIDToken] + iSubID] = [ "#{lDirToken}/#{iSubRealDir}", iSubContext ]
+            end
+          end
+        end
+
+        return rIDs
+      end
+
+    end
+    
+    # The database object storing info about an object
+    class ObjectInfo
+      
+      # The associated context
+      #   Context
+      attr_accessor :Context
+      
+      # The real directory
+      #   String
+      attr_accessor :RealDir
+      
+      # The list of objects
+      #   map< String, VersionedObject >
+      attr_accessor :VersionedObjects
+      
+      # Constructor
+      #
+      # Parameters:
+      # * *iType* (_Type_): The parent type
+      # * *iRealDir* (_String_): The real directory
+      # * *iContext* (_Context_): The context of this object
+      def initialize(iType, iRealDir, iContext)
+        @Type, @RealDir, @Context = iType, iRealDir, iContext
+        @VersionedObjects = nil
+      end
+
+      # Get the list of versioned objects
+      #
+      # Return:
+      # * <em>map<String,VersionedObject></em>: The list of versioned objects, per version
+      def getVersionedObjects
+        readVersionedObjects
+
+        return @VersionedObjects
+      end
+
+      private
+
+      # Read versioned objects
+      def readVersionedObjects
+        if (@VersionedObjects == nil)
+          @VersionedObjects = {}
+          Dir.glob("#{@RealDir}/*").each do |iDirName|
+            lDirToken = File.basename(iDirName)
+            if ((lDirToken[0] >= 48) and
+                (lDirToken[0] <= 57))
+              # We have a version directory
+              lVersion = lDirToken.split(' ')[0]
+              @VersionedObjects[lVersion] = VersionedObject.new(self, "#{@RealDir}/#{lDirToken}")
+            end
+          end
+        end
+      end
+      
+    end
+    
+    # The database object storing info about a versioned object
+    class VersionedObject
+      
+      # The associated context
+      #   Context
+      attr_accessor :Context
+      
+      # The real directory
+      #   String
+      attr_accessor :RealDir
+      
+      # The list of deliverables
+      #   map< String, Deliverable >
+      attr_accessor :Deliverables
+      
+      # Constructor
+      #
+      # Parameters:
+      # * *iObject* (_ObjectInfo_): The parent object
+      # * *iRealDir* (_String_): The directory containing this versioned object
+      def initialize(iObject, iRealDir)
+        @Object, @RealDir = iObject, iRealDir
+        @Deliverables = nil
+        @Context = iObject.Context.clone
+      end
+
+      # Get deliverables
+      #
+      # Return:
+      # * <em>map<String,Deliverable></em>: The list of deliverables, per deliverable name
+      def getDeliverables
+        readDeliverables
+
+        return @Deliverables
+      end
+
+      private
+
+      # Read deliverables
+      def readDeliverables
+        if (@Deliverables == nil)
+          @Deliverables = {}
+          # First, check deliverables from disk
+          if (File.exists("#{@RealDir}/Deliverables"))
+            Dir.glob("#{@RealDir}/Deliverables/*").each do |iDirName|
+              lDirToken = File.basename(iDirName)
+              lDeliverableName = lDirToken.split(' ')[0]
+              # Find its context
+              lContext = @Context.clone
+              if ((@Context[:Deliverables] != nil) and
+                  (@Context[:Deliverables][lDeliverableName] != nil))
+                lContext.mergeWithHashContext(@Context[:Deliverables][lDeliverableName])
+              end
+              @Deliverables[lDeliverableName] = Deliverable.new(self, "#{@RealDir}/Deliverables/#{lDirToken}", lContext)
+            end
+          end
+          # Then from the config file
+          if (@Context[:Deliverables] != nil)
+            @Context[:Deliverables].each do |iDeliverableName, iDeliverableContext|
+              if (@Deliverables[iDeliverableName] == nil)
+                @Deliverables[iDeliverableName] = Deliverable.new(self, "#{@RealDir}/Deliverables/#{iDeliverableName}", iDeliverableContext)
+              end
+            end
+          end
+        end
+      end
+      
+    end
+    
+    # The database object storing info about a deliverable
+    class Deliverable
+      
+      # The associated context
+      #   Context
+      attr_accessor :Context
+      
+      # The real directory
+      #   String
+      attr_accessor :RealDir
+      
+      # Constructor
+      #
+      # Parameters:
+      # * *iVersionedObject* (_VersionedObject_): The parent versioned object
+      # * *iRealDir* (_String_): The real directory containing this deliverable
+      # * *iContext* (_Context_): The deliverable context
+      def initialize(iVersionedObject, iRealDir, iContext)
+        @VersionedObject, @RealDir, @Context = iVersionedObject, iRealDir, iContext
+      end
+      
+    end
+
+    # The root context
+    #   Context
+    attr_reader :Context
+
+    # Constructor
+    #
+    # Parameters:
+    # * *iRootDir* (_String_): The root directory containing the files
+    def initialize(iRootDir)
+      @RootDir = iRootDir
+      @Context = Context.new
+      # The internal database
+      # map< String, Type >
+      @DB = nil
+      @Context.mergeWithDirContext(iRootDir)
+    end
+
+    # Get the list of objects for a given type name
+    #
+    # Parameters:
+    # * *iTypeName* (_String_): The type
+    # Return:
+    # * <em>map<list<String>,ObjectInfo></em>: The list of objects, per ID
+    def getObjects(iTypeName)
+      return getType(iTypeName).getObjects
+    end
+
+    # Get the list of versioned objects for a given type name and object ID
+    #
+    # Parameters:
+    # * *iTypeName* (_String_): The type
+    # * *iObjectID* (_String_): The object ID
+    # Return:
+    # * <em>map<String,VersionedObject></em>: The list of versioned objects, per version
+    def getVersionedObjects(iTypeName, iObjectID)
+      return getObjects(iTypeName)[iObjectID].getVersionedObjects
+    end
+
+    # Get the list of deliverables for a given type name, object ID, version
+    #
+    # Parameters:
+    # * *iTypeName* (_String_): The type
+    # * *iObjectID* (_String_): The object ID
+    # * *iVersion* (_String_): The version
+    # Return:
+    # * <em>map<String,Deliverable></em>: The list of deliverables, per name
+    def getDeliverables(iTypeName, iObjectID, iVersion)
+      return getVersionedObjects(iTypeName, iObjectID)[iVersion].getDeliverables
+    end
+
+    # Get the specified deliverable
+    #
+    # Parameters:
+    # * *iTypeName* (_String_): The type
+    # * *iObjectID* (_String_): The object ID
+    # * *iVersion* (_String_): The version
+    # * *iDeliverableName* (_String_): The deliverable name
+    # Return:
+    # * _Deliverable_: The deliverable
+    def getDeliverable(iTypeName, iObjectID, iVersion, iDeliverableName)
+      return getDeliverables(iTypeName, iObjectID, iVersion)[iDeliverableName]
+    end
+
+    private
+
+    # Get a given type
+    # Raises an exception if the type does not exist
+    #
+    # Parameters:
+    # * *iTypeName* (_String_): The type name to get
+    # Return:
+    # * _Type_: The corresponding type
+    def getType(iTypeName)
+      readTypes
+      if (@DB.has_key?(iTypeName))
+        if (@DB[iTypeName] == nil)
+          # Create it
+          lType = Type.new("#{@RootDir}/#{iTypeName}", @Context)
+          @DB[iTypeName] = lType
+        end
+      else
+        raise RuntimeError.new("Unknown type #{iTypeName} from database.")
+      end
+
+      return @DB[iTypeName]
+    end
+
+    # Read types
+    def readTypes
+      if (@DB == nil)
+        @DB = {}
+        Dir.glob("#{@RootDir}/*").each do |iDirName|
+          @DB[File.basename(iDirName)] = nil
+        end
+      end
+    end
+
+  end
+
+end
