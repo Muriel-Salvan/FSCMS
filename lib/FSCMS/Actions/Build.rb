@@ -48,16 +48,6 @@ module FSCMS
           # Get the corresponding deliverables
           lLstDeliverables += @Proxy.getDeliverableTargets(iTarget)
         end
-        # The list of deliverables built
-        # map< Deliverable, nil >
-        @DeliverablesBuilt = {}
-        if (!@ForceBuild)
-          lLstDeliverables.uniq.each do |ioDeliverable|
-            if (ioDeliverable.AlreadyBuilt)
-              @DeliverablesBuilt[ioDeliverable] = nil
-            end
-          end
-        end
         # Build each deliverable
         lLstDeliverables.uniq.each do |ioDeliverable|
           buildDeliverableAndDependencies(ioDeliverable)
@@ -89,7 +79,8 @@ module FSCMS
       # Parameters:
       # * *ioDeliverable* (_Deliverable_): Deliverable to build
       def buildDeliverable(ioDeliverable)
-        if (@DeliverablesBuilt.has_key?(ioDeliverable))
+        if ((!@ForceBuild) and
+            (File.exists?(ioDeliverable.RealDir)))
           logInfo "Deliverable #{ioDeliverable.RealDir} is already built."
         else
           lProcessInfo, lProcessParams = ioDeliverable.getProcessInfo
@@ -98,7 +89,6 @@ module FSCMS
             # Tell the user it has to do it by hand.
             logMsg "No process defined to build deliverable #{ioDeliverable.RealDir}. Build it manually and press Enter to continue."
             $stdin.gets
-            @DeliverablesBuilt[ioDeliverable] = nil
           else
             # Execute the building process
             logInfo "Build deliverable #{ioDeliverable.RealDir} ..."
@@ -122,7 +112,6 @@ module FSCMS
               end
               logDebug "Command \"#{lRealCmd}\" from \"#{lRealProcessDir}\" completed."
             end
-            @DeliverablesBuilt[ioDeliverable] = nil
           end
         end
       end

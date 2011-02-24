@@ -153,7 +153,7 @@ module FSCMS
             end
           else
             # There is a property reference
-            lDeps = getDeliverableTargets(lTargetTokens[0..-2] + [ lTargetMatch[1] ])
+            lDeps = getDeliverableTargets((lTargetTokens[0..-2] + [ lTargetMatch[1] ]).join('/'))
             if (lDeps.size == 1)
               if (oDependencies == nil)
                 # Read properties from this deliverable result
@@ -161,7 +161,7 @@ module FSCMS
                 File.open("#{lDeps[0].RealDir}/metadata.conf.rb", 'r') do |iFile|
                   lProperties = eval(iFile.read)
                 end
-                lPropertyValue = lProperties[lTargetMatch[2]]
+                lPropertyValue = lProperties[lTargetMatch[2].to_sym]
                 if (lPropertyValue == nil)
                   raise RuntimeError.new("No property named #{lTargetMatch[2]} could be found in deliverable #{lDeps[0].RealDir}. Unable to resolve #{lAliasName}.")
                 else

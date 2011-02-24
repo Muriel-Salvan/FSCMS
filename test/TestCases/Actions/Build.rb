@@ -225,6 +225,23 @@ module FSCMSTest
         end
       end
 
+      # Test that a dependency is not built if it was built before
+      def testDontBuildBuiltDependency
+        setRepository('DeliverablesProcessExistingDependency') do |iRepoDir|
+          runFSCMS(['Build', '--', '--target', 'TestType/TestID2/0.1/TestDeliverable'])
+          assert(File.exists?("#{iRepoDir}/TestType/TestID1/0.1/Deliverables/TestDeliverable"))
+          assert(!File.exists?("#{iRepoDir}/TestType/TestID1/0.1/Deliverables/TestDeliverable/BuiltFile"))
+          lBuiltFileName = "#{iRepoDir}/TestType/TestID2/0.1/Deliverables/TestDeliverable/BuiltFile"
+          assert(File.exists?(lBuiltFileName))
+          File.open(lBuiltFileName, 'r') do |iFile|
+            assert_equal([
+                $FSCMSTest_RepositoryToolsDir,
+                "#{iRepoDir}/TestType/TestID1/0.1/Deliverables/TestDeliverable"
+              ], iFile.read.split("\n"))
+          end
+        end
+      end
+
     end
 
   end

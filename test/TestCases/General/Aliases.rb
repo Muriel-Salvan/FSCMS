@@ -129,6 +129,40 @@ module FSCMSTest
         end
       end
 
+      # Test properties pointed by aliases
+      def testPropertyAliases
+        setRepository('DeliverablesProcessExistingDependency') do |iRepoDir|
+          runFSCMS(['Build', '--', '--target', 'TestType/TestID2/0.2/TestDeliverable'])
+          assert(File.exists?("#{iRepoDir}/TestType/TestID1/0.1/Deliverables/TestDeliverable"))
+          assert(!File.exists?("#{iRepoDir}/TestType/TestID1/0.1/Deliverables/TestDeliverable/BuiltFile"))
+          lBuiltFileName = "#{iRepoDir}/TestType/TestID2/0.2/Deliverables/TestDeliverable/BuiltFile"
+          assert(File.exists?(lBuiltFileName))
+          File.open(lBuiltFileName, 'r') do |iFile|
+            assert_equal([
+                $FSCMSTest_RepositoryToolsDir,
+                'Property1Value'
+              ], iFile.read.split("\n"))
+          end
+        end
+      end
+
+      # Test that a dependency metadata result access aliases in its own context only
+      def testPropertyAliasesContext
+        setRepository('DeliverablesProcessExistingDependency') do |iRepoDir|
+          runFSCMS(['Build', '--', '--target', 'TestType/TestID2/0.3/TestDeliverable'])
+          assert(File.exists?("#{iRepoDir}/TestType/TestID1/0.1/Deliverables/TestDeliverable"))
+          assert(!File.exists?("#{iRepoDir}/TestType/TestID1/0.1/Deliverables/TestDeliverable/BuiltFile"))
+          lBuiltFileName = "#{iRepoDir}/TestType/TestID2/0.3/Deliverables/TestDeliverable/BuiltFile"
+          assert(File.exists?(lBuiltFileName))
+          File.open(lBuiltFileName, 'r') do |iFile|
+            assert_equal([
+                $FSCMSTest_RepositoryToolsDir,
+                "#{iRepoDir}/TestType/TestID1/0.1/Deliverables/TestDeliverable/Property2Value"
+              ], iFile.read.split("\n"))
+          end
+        end
+      end
+
     end
 
   end
