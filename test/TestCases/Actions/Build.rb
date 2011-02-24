@@ -80,13 +80,61 @@ module FSCMSTest
         end
       end
 
-      # Test that a 2 deliverables build correctly when identified with the versioned object only
-      def testBuildSingleDeliverable_VersionedObjectPath
+      # Test that 2 deliverables build correctly when identified with the versioned object only
+      def testBuild2Deliverables
+        setRepository('2Deliverables') do |iRepoDir|
+          runFSCMS(['Build', '--', '--target', 'TestType/TestID/0.1/TestDeliverable1', '--target', 'TestType/TestID/0.1/TestDeliverable2'])
+          [
+            "#{iRepoDir}/TestType/TestID/0.1/Deliverables/TestDeliverable1/BuiltFile",
+            "#{iRepoDir}/TestType/TestID/0.1/Deliverables/TestDeliverable2/BuiltFile"
+          ].each do |iBuiltFileName|
+            assert(File.exists?(iBuiltFileName))
+            File.open(iBuiltFileName, 'r') do |iFile|
+              assert_equal($FSCMSTest_RepositoryToolsDir, iFile.read)
+            end
+          end
+        end
+      end
+
+      # Test that 2 deliverables build correctly when identified with the versioned object only
+      def testBuild2Deliverables_VersionedObjectPath
         setRepository('2Deliverables') do |iRepoDir|
           runFSCMS(['Build', '--', '--target', 'TestType/TestID/0.1'])
           [
             "#{iRepoDir}/TestType/TestID/0.1/Deliverables/TestDeliverable1/BuiltFile",
             "#{iRepoDir}/TestType/TestID/0.1/Deliverables/TestDeliverable2/BuiltFile"
+          ].each do |iBuiltFileName|
+            assert(File.exists?(iBuiltFileName))
+            File.open(iBuiltFileName, 'r') do |iFile|
+              assert_equal($FSCMSTest_RepositoryToolsDir, iFile.read)
+            end
+          end
+        end
+      end
+
+      # Test that 2 deliverables from different objects build correctly
+      def testBuild2DeliverablesDifferentObjects
+        setRepository('2DeliverablesDifferentObjects') do |iRepoDir|
+          runFSCMS(['Build', '--', '--target', 'TestType/TestID1/0.1/TestDeliverable', '--target', 'TestType/TestID2/0.1/TestDeliverable'])
+          [
+            "#{iRepoDir}/TestType/TestID1/0.1/Deliverables/TestDeliverable/BuiltFile",
+            "#{iRepoDir}/TestType/TestID2/0.1/Deliverables/TestDeliverable/BuiltFile"
+          ].each do |iBuiltFileName|
+            assert(File.exists?(iBuiltFileName))
+            File.open(iBuiltFileName, 'r') do |iFile|
+              assert_equal($FSCMSTest_RepositoryToolsDir, iFile.read)
+            end
+          end
+        end
+      end
+
+      # Test that 2 deliverables from different objects build correctly when specifying all objects
+      def testBuild2DeliverablesDifferentObjects_AllObjects
+        setRepository('2DeliverablesDifferentObjects') do |iRepoDir|
+          runFSCMS(['Build', '--', '--target', 'TestType'])
+          [
+            "#{iRepoDir}/TestType/TestID1/0.1/Deliverables/TestDeliverable/BuiltFile",
+            "#{iRepoDir}/TestType/TestID2/0.1/Deliverables/TestDeliverable/BuiltFile"
           ].each do |iBuiltFileName|
             assert(File.exists?(iBuiltFileName))
             File.open(iBuiltFileName, 'r') do |iFile|

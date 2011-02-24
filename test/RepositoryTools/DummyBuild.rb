@@ -12,6 +12,12 @@ if (File.exists?(lBuiltFile))
 else
   File.open(lBuiltFile, 'w') do |oFile|
     oFile << Dir.getwd
+    if (ARGV.size > 1)
+      # Dump all parameters
+      ARGV[1..-1].each do |iArg|
+        oFile << "\n#{iArg}"
+      end
+    end
   end
 end
 

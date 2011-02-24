@@ -1,0 +1,5 @@
+{
+  :Aliases => {
+    'RootAlias' => 'RootAliasValue'
+  }
+}
