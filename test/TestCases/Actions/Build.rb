@@ -242,6 +242,26 @@ module FSCMSTest
         end
       end
 
+      # Test that a single deliverable builds correctly with properties
+      def testBuildSingleDeliverableWithProperties
+        setRepository('UniqueDeliverableProperties') do |iRepoDir|
+          runFSCMS(['Build', '--', '--target', 'TestType/TestID/0.1/TestDeliverable'])
+          lBuiltFileName = "#{iRepoDir}/TestType/TestID/0.1/Deliverables/TestDeliverable/BuiltFile"
+          assert(File.exists?(lBuiltFileName))
+          File.open(lBuiltFileName, 'r') do |iFile|
+            assert_equal($FSCMSTest_RepositoryToolsDir, iFile.read)
+          end
+          lBuiltFileName = "#{iRepoDir}/TestType/TestID/0.1/Deliverables/TestDeliverable/metadata.conf.rb"
+          assert(File.exists?(lBuiltFileName))
+          File.open(lBuiltFileName, 'r') do |iFile|
+            assert_equal( {
+                :Property1 => 'Property1Value',
+                :Property2 => "#{iRepoDir}/TestType/TestID/0.1/Deliverables/TestDeliverable/Property2Value"
+              }, eval(iFile.read))
+          end
+        end
+      end
+
     end
 
   end
