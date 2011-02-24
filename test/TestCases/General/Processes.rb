@@ -5,7 +5,7 @@
 
 module FSCMSTest
 
-  module Common
+  module General
 
     class Processes < ::Test::Unit::TestCase
 

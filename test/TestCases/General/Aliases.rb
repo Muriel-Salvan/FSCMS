@@ -5,7 +5,7 @@
 
 module FSCMSTest
 
-  module Common
+  module General
 
     class Aliases < ::Test::Unit::TestCase
 
@@ -21,7 +21,8 @@ module FSCMSTest
             assert_equal( [
                 $FSCMSTest_RepositoryToolsDir,
                 "#{iRepoDir}/TestType/TestID/0.1/Sources",
-                "#{iRepoDir}/TestType/TestID/0.1/Deliverables/TestDeliverable"
+                "#{iRepoDir}/TestType/TestID/0.1/Deliverables/TestDeliverable",
+                "#{iRepoDir}/TestType/TestID/0.1/Temp/TestDeliverable"
               ], iFile.read.split("\n"))
           end
         end
