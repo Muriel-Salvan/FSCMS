@@ -80,6 +80,30 @@ module FSCMSTest
         end
       end
 
+      # Test that a single deliverable builds even if it is already built with the force option
+      def testForceBuildSingleDeliverable
+        setRepository('UniqueExistingDeliverable') do |iRepoDir|
+          runFSCMS(['Build', '--', '--target', 'TestType/TestID/0.1/TestDeliverable', '--force'])
+          lBuiltFileName = "#{iRepoDir}/TestType/TestID/0.1/Deliverables/TestDeliverable/BuiltFile"
+          assert(File.exists?(lBuiltFileName))
+          File.open(lBuiltFileName, 'r') do |iFile|
+            assert_equal($FSCMSTest_RepositoryToolsDir, iFile.read)
+          end
+        end
+      end
+
+      # Test that a single deliverable builds just once even if it is already built with the force option
+      def testForceBuildSingleDeliverableOnce
+        setRepository('UniqueExistingDeliverable') do |iRepoDir|
+          runFSCMS(['Build', '--', '--target', 'TestType/TestID/0.1/TestDeliverable', '--target', 'TestType/TestID/0.1/TestDeliverable', '--force'])
+          lBuiltFileName = "#{iRepoDir}/TestType/TestID/0.1/Deliverables/TestDeliverable/BuiltFile"
+          assert(File.exists?(lBuiltFileName))
+          File.open(lBuiltFileName, 'r') do |iFile|
+            assert_equal($FSCMSTest_RepositoryToolsDir, iFile.read)
+          end
+        end
+      end
+
       # Test that 2 deliverables build correctly when identified with the versioned object only
       def testBuild2Deliverables
         setRepository('2Deliverables') do |iRepoDir|

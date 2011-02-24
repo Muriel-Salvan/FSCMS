@@ -21,12 +21,17 @@ module FSCMS
         # The list of targets, as specified as options
         # list< String >
         @LstTargets = []
+        @ForceBuild = false
 
         # Initialize properties that will be set by the options parser
         rOptions.on( '--target <TargetName>', String,
           '<TargetName>: Name of target to build (ex.: TrackMusics/RR126/0.1.20101102/WAV_192kHz_24bits)',
           'Set a Target to build (can be specified several times).') do |iArg|
           @LstTargets << iArg
+        end
+        rOptions.on( '--force',
+          'Force building this target even if it was already built.') do
+          @ForceBuild = true
         end
 
         return rOptions
@@ -46,9 +51,11 @@ module FSCMS
         # The list of deliverables built
         # map< Deliverable, nil >
         @DeliverablesBuilt = {}
-        lLstDeliverables.uniq.each do |ioDeliverable|
-          if (ioDeliverable.AlreadyBuilt)
-            @DeliverablesBuilt[ioDeliverable] = nil
+        if (!@ForceBuild)
+          lLstDeliverables.uniq.each do |ioDeliverable|
+            if (ioDeliverable.AlreadyBuilt)
+              @DeliverablesBuilt[ioDeliverable] = nil
+            end
           end
         end
         # Build each deliverable

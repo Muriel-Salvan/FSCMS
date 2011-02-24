@@ -339,7 +339,8 @@ module FSCMS
         # Set forced aliases
         @Context.mergeWithHashContext( {
           :Aliases => {
-            'DeliverableDir' => @RealDir
+            'DeliverableDir' => @RealDir,
+            'TempDir' => "#{@VersionedObject.RealDir}/Temp/#{File.basename(@RealDir).split(' ')[0]}"
           }
         } )
         @AlreadyBuilt = File.exists?(@RealDir)
