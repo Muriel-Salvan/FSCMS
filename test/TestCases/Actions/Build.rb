@@ -168,6 +168,63 @@ module FSCMSTest
         end
       end
 
+      # Test that a dependency defined in a process cmd makes the dependency be built before
+      def testBuildProcessCmdDependency
+        setRepository('DeliverablesProcessDependency') do |iRepoDir|
+          runFSCMS(['Build', '--', '--target', 'TestType/TestID2/0.1/TestDeliverable'])
+          lBuiltFileName = "#{iRepoDir}/TestType/TestID1/0.1/Deliverables/TestDeliverable/BuiltFile"
+          assert(File.exists?(lBuiltFileName))
+          File.open(lBuiltFileName, 'r') do |iFile|
+            assert_equal($FSCMSTest_RepositoryToolsDir, iFile.read)
+          end
+          lBuiltFileName = "#{iRepoDir}/TestType/TestID2/0.1/Deliverables/TestDeliverable/BuiltFile"
+          assert(File.exists?(lBuiltFileName))
+          File.open(lBuiltFileName, 'r') do |iFile|
+            assert_equal([
+                $FSCMSTest_RepositoryToolsDir,
+                "#{iRepoDir}/TestType/TestID1/0.1/Deliverables/TestDeliverable"
+              ], iFile.read.split("\n"))
+          end
+        end
+      end
+
+      # Test that a dependency defined in a process dir makes the dependency be built before
+      def testBuildProcessDirDependency
+        setRepository('DeliverablesProcessDependency') do |iRepoDir|
+          runFSCMS(['Build', '--', '--target', 'TestType/TestID2/0.2/TestDeliverable'])
+          lBuiltFileName = "#{iRepoDir}/TestType/TestID1/0.1/Deliverables/TestDeliverable/BuiltFile"
+          assert(File.exists?(lBuiltFileName))
+          File.open(lBuiltFileName, 'r') do |iFile|
+            assert_equal($FSCMSTest_RepositoryToolsDir, iFile.read)
+          end
+          lBuiltFileName = "#{iRepoDir}/TestType/TestID2/0.2/Deliverables/TestDeliverable/BuiltFile"
+          assert(File.exists?(lBuiltFileName))
+          File.open(lBuiltFileName, 'r') do |iFile|
+            assert_equal("#{iRepoDir}/TestType/TestID1/0.1/Deliverables/TestDeliverable", iFile.read)
+          end
+        end
+      end
+
+      # Test that a dependency defined in a process parameter makes the dependency be built before
+      def testBuildProcessParameterDependency
+        setRepository('DeliverablesProcessDependency') do |iRepoDir|
+          runFSCMS(['Build', '--', '--target', 'TestType/TestID2/0.3/TestDeliverable'])
+          lBuiltFileName = "#{iRepoDir}/TestType/TestID1/0.1/Deliverables/TestDeliverable/BuiltFile"
+          assert(File.exists?(lBuiltFileName))
+          File.open(lBuiltFileName, 'r') do |iFile|
+            assert_equal($FSCMSTest_RepositoryToolsDir, iFile.read)
+          end
+          lBuiltFileName = "#{iRepoDir}/TestType/TestID2/0.3/Deliverables/TestDeliverable/BuiltFile"
+          assert(File.exists?(lBuiltFileName))
+          File.open(lBuiltFileName, 'r') do |iFile|
+            assert_equal([
+                $FSCMSTest_RepositoryToolsDir,
+                "#{iRepoDir}/TestType/TestID1/0.1/Deliverables/TestDeliverable"
+              ], iFile.read.split("\n"))
+          end
+        end
+      end
+
     end
 
   end

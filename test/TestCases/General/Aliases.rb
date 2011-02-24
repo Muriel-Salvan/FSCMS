@@ -20,7 +20,7 @@ module FSCMSTest
           File.open(lBuiltFileName, 'r') do |iFile|
             assert_equal( [
                 $FSCMSTest_RepositoryToolsDir,
-                "#{iRepoDir}/TestType/TestID/0.1/Sources",
+                "#{iRepoDir}/TestType/TestID/0.1/Source",
                 "#{iRepoDir}/TestType/TestID/0.1/Deliverables/TestDeliverable",
                 "#{iRepoDir}/TestType/TestID/0.1/Temp/TestDeliverable"
               ], iFile.read.split("\n"))
@@ -91,6 +91,39 @@ module FSCMSTest
                 'ObjectAlias2Value',
                 'ObjectAlias3ValueVersionedObjectOverwrite',
                 'VersionedObjectAlias1Value'
+              ], iFile.read.split("\n"))
+          end
+        end
+      end
+
+      # Test process parameters also available as aliases
+      def testProcessParametersAliases
+        setRepository('UniqueDeliverableProcessAliases') do |iRepoDir|
+          runFSCMS(['Build', '--', '--target', 'TestType/TestID/0.1/TestDeliverable'])
+          lBuiltFileName = "#{iRepoDir}/TestType/TestID/0.1/Deliverables/TestDeliverable/BuiltFile"
+          assert(File.exists?(lBuiltFileName))
+          File.open(lBuiltFileName, 'r') do |iFile|
+            assert_equal( [
+                $FSCMSTest_RepositoryToolsDir,
+                'ProcessParam1Value',
+                'ProcessParam2Value'
+              ], iFile.read.split("\n"))
+          end
+        end
+      end
+
+      # Test recursive aliases
+      def testRecursiveAliases
+        setRepository('UniqueDeliverableEmbeddedAliases') do |iRepoDir|
+          runFSCMS(['Build', '--', '--target', 'TestType/TestID/0.1/TestDeliverable'])
+          lBuiltFileName = "#{iRepoDir}/TestType/TestID/0.1/Deliverables/TestDeliverable/BuiltFile"
+          assert(File.exists?(lBuiltFileName))
+          File.open(lBuiltFileName, 'r') do |iFile|
+            assert_equal( [
+                $FSCMSTest_RepositoryToolsDir,
+                'Alias1Value',
+                'Alias2Alias1Value',
+                'DoubleAliasValue'
               ], iFile.read.split("\n"))
           end
         end

@@ -261,7 +261,7 @@ module FSCMS
         # Set forced aliases
         @Context.mergeWithHashContext( {
           :Aliases => {
-            'SourceDir' => "#{iRealDir}/Sources"
+            'SourceDir' => "#{iRealDir}/Source"
           }
         } )
       end
@@ -345,7 +345,28 @@ module FSCMS
         } )
         @AlreadyBuilt = File.exists?(@RealDir)
       end
-      
+
+      # Get the process info associated to this deliverable
+      #
+      # Return:
+      # * <em>map<Symbol,Object></em>: The process info, or nil if none
+      # * <em>map<Symbol,Object></em>: The process parameters
+      def getProcessInfo
+        rProcessInfo = nil
+        rProcessParams = nil
+
+        if (@Context.Properties[:Execute] != nil)
+          lSymProcess = @Context.Properties[:Execute][:Process]
+          rProcessInfo = @Context.Processes[lSymProcess]
+          if (rProcessInfo == nil)
+            raise RuntimeError.new("No process info associated to #{lSymProcess.to_s}")
+          end
+          rProcessParams = @Context.Properties[:Execute][:Parameters] || {}
+        end
+
+        return rProcessInfo, rProcessParams
+      end
+
     end
 
     # The root context

@@ -72,7 +72,14 @@ module FSCMS
       # Parameters:
       # * *ioDeliverable* (_Deliverable_): Deliverable to build
       def buildDeliverableAndDependencies(ioDeliverable)
-        # TODO: Build dependencies
+        # First consider its dependencies
+        lDependencies = {}
+        @Proxy.getDeliverableDependencies(ioDeliverable, lDependencies)
+        lDependencies.each do |ioDepDeliverable, iNil|
+          logInfo "Build dependency #{ioDepDeliverable.RealDir}"
+          buildDeliverable(ioDepDeliverable)
+        end
+        # The build it
         buildDeliverable(ioDeliverable)
       end
 
@@ -84,41 +91,39 @@ module FSCMS
       def buildDeliverable(ioDeliverable)
         if (@DeliverablesBuilt.has_key?(ioDeliverable))
           logInfo "Deliverable #{ioDeliverable.RealDir} is already built."
-        elsif (ioDeliverable.Context.Properties[:Execute] == nil)
-          # No process to build it.
-          # Tell the user it has to do it by hand.
-          logMsg "No process defined to build deliverable #{ioDeliverable.RealDir}. Build it manually and press Enter to continue."
-          $stdin.gets
-          @DeliverablesBuilt[ioDeliverable] = nil
         else
-          # Execute the building process
-          logInfo "Build deliverable #{ioDeliverable.RealDir} ..."
-          lSymProcess = ioDeliverable.Context.Properties[:Execute][:Process]
-          lProcessInfo = ioDeliverable.Context.Processes[lSymProcess]
+          lProcessInfo, lProcessParams = ioDeliverable.getProcessInfo
           if (lProcessInfo == nil)
-            raise RuntimeError.new("No process info associated to #{lSymProcess.to_s}")
-          end
-          # Read the process details
-          lProcessDir = lProcessInfo[:Dir] || ioDeliverable.RealDir
-          lRealProcessDir = @Proxy.replaceAliases(lProcessDir, ioDeliverable.Context.Aliases)
-          lCmd = lProcessInfo[:Cmd]
-          if (lCmd == nil)
-            raise RuntimeError.new("Process #{lSymProcess.to_s} has no :Cmd attribute defined.")
-          end
-          lRealCmd = @Proxy.replaceAliases(lCmd, ioDeliverable.Context.Aliases)
-          # Create the destination dir
-          FileUtils::mkdir_p(ioDeliverable.RealDir)
-          # Execute the process
-          changeDir(lRealProcessDir) do
-            logDebug "Execute command \"#{lRealCmd}\" from \"#{lRealProcessDir}\"..."
-            lSuccess = system(lRealCmd)
-            lErrorCode = $?
-            if (lSuccess != true)
-              raise RuntimeError.new("Error while executing \"#{lRealCmd}\" from \"#{lRealProcessDir}\": #{lErrorCode}")
+            # No process to build it.
+            # Tell the user it has to do it by hand.
+            logMsg "No process defined to build deliverable #{ioDeliverable.RealDir}. Build it manually and press Enter to continue."
+            $stdin.gets
+            @DeliverablesBuilt[ioDeliverable] = nil
+          else
+            # Execute the building process
+            logInfo "Build deliverable #{ioDeliverable.RealDir} ..."
+            lAliases = ioDeliverable.Context.Aliases.merge(@Proxy.params2aliases(lProcessParams))
+            lProcessDir = lProcessInfo[:Dir] || ioDeliverable.RealDir
+            lRealProcessDir = @Proxy.replaceAliases(lProcessDir, lAliases)
+            lCmd = lProcessInfo[:Cmd]
+            if (lCmd == nil)
+              raise RuntimeError.new("Process #{lSymProcess.to_s} has no :Cmd attribute defined.")
             end
-            logDebug "Command \"#{lRealCmd}\" from \"#{lRealProcessDir}\" completed."
+            lRealCmd = @Proxy.replaceAliases(lCmd, lAliases)
+            # Create the destination dir
+            FileUtils::mkdir_p(ioDeliverable.RealDir)
+            # Execute the process
+            changeDir(lRealProcessDir) do
+              logDebug "Execute command \"#{lRealCmd}\" from \"#{lRealProcessDir}\"..."
+              lSuccess = system(lRealCmd)
+              lErrorCode = $?
+              if (lSuccess != true)
+                raise RuntimeError.new("Error while executing \"#{lRealCmd}\" from \"#{lRealProcessDir}\": #{lErrorCode}")
+              end
+              logDebug "Command \"#{lRealCmd}\" from \"#{lRealProcessDir}\" completed."
+            end
+            @DeliverablesBuilt[ioDeliverable] = nil
           end
-          @DeliverablesBuilt[ioDeliverable] = nil
         end
       end
       
