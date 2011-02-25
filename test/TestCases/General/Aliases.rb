@@ -22,7 +22,8 @@ module FSCMSTest
                 $FSCMSTest_RepositoryToolsDir,
                 "#{iRepoDir}/TestType/TestID/0.1/Source",
                 "#{iRepoDir}/TestType/TestID/0.1/Deliverables/TestDeliverable",
-                "#{iRepoDir}/TestType/TestID/0.1/Temp/TestDeliverable"
+                "#{iRepoDir}/TestType/TestID/0.1/Temp/TestDeliverable",
+                'TestType/TestID/0.1'
               ], iFile.read.split("\n"))
           end
         end

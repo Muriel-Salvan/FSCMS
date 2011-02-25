@@ -276,7 +276,8 @@ module FSCMS
         # Set forced aliases
         @Context.mergeWithHashContext( {
           :Aliases => {
-            'SourceDir' => "#{iRealDir}/Source"
+            'SourceDir' => "#{iRealDir}/Source",
+            'Self' => @ID
           }
         } )
       end
