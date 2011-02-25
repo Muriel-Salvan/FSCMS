@@ -46,7 +46,7 @@ module FSCMSTest
       end
 
       # Test that a single deliverable lists files correctly even without sources and metadata
-      def testListSingleDeliverableWithoutSource
+      def testListSingleDeliverableWithoutConf
         setRepository('UniqueExistingDeliverableNoConf') do |iRepoDir|
           lOutputFileName = "#{iRepoDir}/OutputList.conf.rb"
           runFSCMS(['ListFiles', '--', '--target', 'TestType/TestID/0.1/TestDeliverable', '--output', lOutputFileName])

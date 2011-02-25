@@ -90,11 +90,10 @@ module FSCMS
               logDebug "Command \"#{lRealCmd}\" from \"#{lRealProcessDir}\" completed."
             end
             # Generate properties if needed
-            lProperties = ioDeliverable.Context.Properties[:Properties]
-            if (lProperties != nil)
+            if (lProcessInfo[:Output] != nil)
               # Create each string line to append to the file
               lLstLines = []
-              lProperties.each do |iKey, iValue|
+              lProcessInfo[:Output].each do |iKey, iValue|
                 lLstLines << "  :#{iKey.to_s} => #{@Proxy.replaceAliases(iValue, lAliases).inspect}"
               end
               File.open("#{ioDeliverable.RealDir}/metadata.conf.rb", 'w') do |oFile|
