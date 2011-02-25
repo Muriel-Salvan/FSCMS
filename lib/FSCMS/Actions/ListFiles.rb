@@ -41,22 +41,43 @@ module FSCMS
       # * *@Proxy*: The proxy of SimpleCSM
       def execute
         # List of files, per deliverable
-        @LstFiles = {}
+        lLstFiles = {}
         @Proxy.foreachDeliverable(@LstTargets) do |iDeliverable|
-          @LstDeliverableFiles = []
+          # The list of source files
+          # list< String >
+          @LstSrcFiles = []
+          # The list of deliverable files that are issued from non-automated processes
+          # list< String >
+          @LstManualDeliverableFiles = []
+          # The list of deliverables that are needed as manual processes, but are not built now
+          # list< String >
+          @LstManualMissingDeliverables = []
           @Proxy.visitDeliverable(iDeliverable, true) do |iVisitedDeliverable|
             listDeliverable(iVisitedDeliverable)
           end
-          @LstFiles[iDeliverable] = @LstDeliverableFiles.uniq.sort
+          lLstFiles[iDeliverable] = [
+            @LstSrcFiles.uniq.sort,
+            @LstManualDeliverableFiles.uniq.sort,
+            @LstManualMissingDeliverables.uniq.sort
+          ]
         end
         # Display and store
-        @LstFiles.each do |iDeliverable, iLstFiles|
-          logMsg "===== Files needed for deliverable #{iDeliverable.ID}:\n  * #{iLstFiles.join("\n  * ")}\n\n"
+        lLstFiles.each do |iDeliverable, iFilesInfo|
+          iLstSrcFiles, iLstManualDeliverableFiles, iLstManualMissingDeliverables = iFilesInfo
+          logMsg "== Deliverable #{iDeliverable.ID}
+=== Critical source files:
+  * #{iLstSrcFiles.join("\n  * ")}
+=== Manual deliverable files:
+  * #{iLstManualDeliverableFiles.join("\n  * ")}
+=== Manual deliverables missing files now:
+  * #{iLstManualMissingDeliverables.join("\n  * ")}
+
+"
         end
         if (@OutputFileName != nil)
           lOutputFiles = {}
-          @LstFiles.each do |iDeliverable, iLstFiles|
-            lOutputFiles[iDeliverable.ID] = iLstFiles
+          lLstFiles.each do |iDeliverable, iFilesInfo|
+            lOutputFiles[iDeliverable.ID] = iFilesInfo
           end
           File.open(@OutputFileName, 'w') do |oFile|
             oFile.write(lOutputFiles.inspect)
@@ -72,18 +93,29 @@ module FSCMS
       # * *iDeliverable* (_Deliverable_): Deliverable to fetch
       def listDeliverable(iDeliverable)
         lVODir = iDeliverable.VersionedObject.RealDir
-        @LstDeliverableFiles.concat(Dir.glob("#{lVODir}/Source/**/*"))
+        @LstSrcFiles.concat(Dir.glob("#{lVODir}/Source/**/*"))
         # Get all metadata.conf.rb from the VersionedObject to the root directory
         lCurrentDir = lVODir.clone
         while (true)
           lMetadataFileName = "#{lCurrentDir}/metadata.conf.rb"
           if (File.exists?(lMetadataFileName))
-            @LstDeliverableFiles << lMetadataFileName
+            @LstSrcFiles << lMetadataFileName
           end
           if (lCurrentDir == @Proxy.RootDir)
             break
           else
             lCurrentDir = File.dirname(lCurrentDir)
+          end
+        end
+        # If this deliverable is not built using a fully automated process, we must also include the deliverable result files
+        lProcessInfo, lProcessParameters = iDeliverable.getProcessInfo
+        if ((lProcessInfo == nil) or
+            (!lProcessInfo[:FullyAutomated]))
+          # We also need the deliverable files
+          if (File.exists?(iDeliverable.RealDir))
+            @LstManualDeliverableFiles.concat(Dir.glob("#{iDeliverable.RealDir}/**/*"))
+          else
+            @LstManualMissingDeliverables << iDeliverable.ID
           end
         end
       end
