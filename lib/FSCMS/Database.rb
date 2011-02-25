@@ -97,14 +97,19 @@ module FSCMS
       # The map of objects
       #   map< list< String >, ObjectInfo >
       attr_accessor :Objects
+
+      # The ID
+      #   String
+      attr_reader :ID
       
       # Constructor
       #
       # Parameters:
       # * *iRealDir* (_String_): The directory containing this type
       # * *iContext* (_Context_): The parent context
-      def initialize(iRealDir, iContext)
-        @RealDir = iRealDir
+      # * *iID* (_String_): The ID
+      def initialize(iRealDir, iContext, iID)
+        @RealDir, @ID = iRealDir, iID
         @Context = Context.new
         @Objects = nil
         # Read its context
@@ -130,7 +135,7 @@ module FSCMS
           @Objects = {}
           parseIDDirs(@RealDir, @Context).each do |iID, iIDInfo|
             iRealDir, iContext = iIDInfo
-            @Objects[iID] = ObjectInfo.new(self, "#{@RealDir}/#{iRealDir}", iContext)
+            @Objects[iID] = ObjectInfo.new(self, "#{@RealDir}/#{iRealDir}", iContext, "#{@ID}/#{iID.join('/')}")
             logDebug "Found object #{@RealDir}/#{iRealDir}"
           end
         end
@@ -189,6 +194,10 @@ module FSCMS
       # The list of objects
       #   map< String, VersionedObject >
       attr_accessor :VersionedObjects
+
+      # The ID
+      #   String
+      attr_reader :ID
       
       # Constructor
       #
@@ -196,8 +205,9 @@ module FSCMS
       # * *iType* (_Type_): The parent type
       # * *iRealDir* (_String_): The real directory
       # * *iContext* (_Context_): The context of this object
-      def initialize(iType, iRealDir, iContext)
-        @Type, @RealDir, @Context = iType, iRealDir, iContext.clone
+      # * *iID* (_String_): The ID
+      def initialize(iType, iRealDir, iContext, iID)
+        @Type, @RealDir, @Context, @ID = iType, iRealDir, iContext.clone, iID
         @VersionedObjects = nil
       end
 
@@ -224,7 +234,7 @@ module FSCMS
                 (lFirstChar <= 57))
               # We have a version directory
               lVersion = lDirToken.split(' ')[0]
-              @VersionedObjects[lVersion] = VersionedObject.new(self, "#{@RealDir}/#{lDirToken}")
+              @VersionedObjects[lVersion] = VersionedObject.new(self, "#{@RealDir}/#{lDirToken}", "#{@ID}/#{lVersion}")
               logDebug "Found versioned object #{@RealDir}/#{lDirToken}"
             end
           end
@@ -247,14 +257,19 @@ module FSCMS
       # The list of deliverables
       #   map< String, Deliverable >
       attr_accessor :Deliverables
+
+      # The ID
+      #   String
+      attr_reader :ID
       
       # Constructor
       #
       # Parameters:
       # * *iObject* (_ObjectInfo_): The parent object
       # * *iRealDir* (_String_): The directory containing this versioned object
-      def initialize(iObject, iRealDir)
-        @Object, @RealDir = iObject, iRealDir
+      # * *iID* (_String_): The ID
+      def initialize(iObject, iRealDir, iID)
+        @Object, @RealDir, @ID = iObject, iRealDir, iID
         @Deliverables = nil
         @Context = iObject.Context.clone
         @Context.mergeWithDirContext(@RealDir)
@@ -293,7 +308,7 @@ module FSCMS
                   (@Context.Properties[:Deliverables][lDeliverableName] != nil))
                 lContext.mergeWithHashContext(@Context.Properties[:Deliverables][lDeliverableName])
               end
-              @Deliverables[lDeliverableName] = Deliverable.new(self, "#{@RealDir}/Deliverables/#{lDirToken}", lContext)
+              @Deliverables[lDeliverableName] = Deliverable.new(self, "#{@RealDir}/Deliverables/#{lDirToken}", lContext, "#{@ID}/#{lDeliverableName}")
               logDebug "Found deliverable from file system #{@RealDir}/Deliverables/#{lDirToken}"
             end
           end
@@ -303,7 +318,7 @@ module FSCMS
               if (@Deliverables[iDeliverableName] == nil)
                 lContext = @Context.clone
                 lContext.mergeWithHashContext(iDeliverableContext)
-                @Deliverables[iDeliverableName] = Deliverable.new(self, "#{@RealDir}/Deliverables/#{iDeliverableName}", lContext)
+                @Deliverables[iDeliverableName] = Deliverable.new(self, "#{@RealDir}/Deliverables/#{iDeliverableName}", lContext, "#{@ID}/#{iDeliverableName}")
                 logDebug "Found deliverable from metadata #{@RealDir}/Deliverables/#{iDeliverableName}"
               end
             end
@@ -324,9 +339,13 @@ module FSCMS
       #   String
       attr_accessor :RealDir
 
-      # Is the deliverable already built ?
-      #   Boolean
-      attr_reader :AlreadyBuilt
+      # The corresponding versioned object
+      #   VersionedObject
+      attr_reader :VersionedObject
+
+      # The ID of this deliverable
+      #   String
+      attr_reader :ID
       
       # Constructor
       #
@@ -334,8 +353,9 @@ module FSCMS
       # * *iVersionedObject* (_VersionedObject_): The parent versioned object
       # * *iRealDir* (_String_): The real directory containing this deliverable
       # * *iContext* (_Context_): The deliverable context
-      def initialize(iVersionedObject, iRealDir, iContext)
-        @VersionedObject, @RealDir, @Context = iVersionedObject, iRealDir, iContext.clone
+      # * *iID* (_String_): The ID
+      def initialize(iVersionedObject, iRealDir, iContext, iID)
+        @VersionedObject, @RealDir, @Context, @ID = iVersionedObject, iRealDir, iContext.clone, iID
         # Set forced aliases
         @Context.mergeWithHashContext( {
           :Aliases => {
@@ -343,7 +363,6 @@ module FSCMS
             'TempDir' => "#{@VersionedObject.RealDir}/Temp/#{File.basename(@RealDir).split(' ')[0]}"
           }
         } )
-        @AlreadyBuilt = File.exists?(@RealDir)
       end
 
       # Get the process info associated to this deliverable
@@ -461,7 +480,7 @@ module FSCMS
       if (@DB.has_key?(iTypeName))
         if (@DB[iTypeName] == nil)
           # Create it
-          lType = Type.new("#{@RootDir}/#{iTypeName}", @Context)
+          lType = Type.new("#{@RootDir}/#{iTypeName}", @Context, iTypeName)
           @DB[iTypeName] = lType
         end
       else

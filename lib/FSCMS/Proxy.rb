@@ -7,11 +7,17 @@ module FSCMS
 
   class Proxy
 
+    # The root directory
+    #   String
+    attr_reader :RootDir
+
     # Constructor
     #
     # Parameters:
     # * *ioDB* (_Database_): The database of objects, versions, deliverables...
-    def initialize(ioDB)
+    # * *iRootDir* (_String_): The root directory
+    def initialize(ioDB, iRootDir)
+      @RootDir = iRootDir
       @DB = ioDB
     end
 
@@ -20,7 +26,7 @@ module FSCMS
     # * MusicTracks/RR126/0.1.20101102/WAV_192kHz_24bits: A given deliverable
     # * MusicTracks/RR126/Previews/30s/0.1.20101010/WAV_192kHz_24bits: A given deliverable with a hierarchical ID
     # * MusicTracks/RR126/0.1.20101102: All deliverables of a given object version
-    # * MusicTracks/RR126: All deliverables of all versions of a given object
+    # * MusicTracks/RR126: All deliverables of all versions of a given object, or sub-objects
     # * MusicTracks: All music tracks, all versions, all deliverables
     #
     # Parameters:
@@ -68,10 +74,23 @@ module FSCMS
           end
         end
       elsif (lVersionName == nil)
-        # All deliverables from all versioned objects from this object
-        @DB.getVersionedObjects(lTypeName, lLstID).each do |iVersion, iVersionedObject|
-          iVersionedObject.getDeliverables.each do |iDeliverableName, iDeliverable|
-            rDeliverables << iDeliverable
+        # All deliverables from all versioned objects from this object, or any part of it
+        # Gather also the list of objects who begin with this object ID (ex.: TestID will return TestID/0.1 and also TestID/SubTestID/0.1)
+        lObjects = []
+        @DB.getObjects(lTypeName).each do |iID, iObjectInfo|
+          if (iID[0..lLstID.size-1] == lLstID)
+            lObjects << iObjectInfo
+          end
+        end
+        if (lObjects.empty?)
+          raise RuntimeError.new("No object could match ID #{lTypeName}/#{lLstID.join('/')}")
+        else
+          lObjects.each do |iObjectInfo|
+            iObjectInfo.getVersionedObjects.each do |iVersion, iVersionedObject|
+              iVersionedObject.getDeliverables.each do |iDeliverableName, iDeliverable|
+                rDeliverables << iDeliverable
+              end
+            end
           end
         end
       elsif (lDeliverableName == nil)
@@ -163,7 +182,7 @@ module FSCMS
                 end
                 lPropertyValue = lProperties[lTargetMatch[2].to_sym]
                 if (lPropertyValue == nil)
-                  raise RuntimeError.new("No property named #{lTargetMatch[2]} could be found in deliverable #{lDeps[0].RealDir}. Unable to resolve #{lAliasName}.")
+                  raise RuntimeError.new("No property named #{lTargetMatch[2]} could be found in deliverable #{lDeps[0].ID}. Unable to resolve #{lAliasName}.")
                 else
                   rStr = "#{lMatch[1]}#{replaceAliases(lPropertyValue, lDeps[0].Context.Aliases)}#{lMatch[3]}"
                 end
@@ -185,6 +204,48 @@ module FSCMS
       end
 
       return rStr
+    end
+
+    # Visit a list of deliverables based on a list of targets.
+    #
+    # Parameters:
+    # * *iLstTargets* (<em>list<String></em>): The list of targets to consider
+    # * *CodeBlock*: The code called for each deliverable found
+    # ** Parameters:
+    # *** *iDeliverable* (_Deliverable_): The deliverable
+    def foreachDeliverable(iLstTargets)
+      # Compute the list of deliverables
+      # list<Deliverable>
+      lLstDeliverables = []
+      iLstTargets.each do |iTarget|
+        # Get the corresponding deliverables
+        lLstDeliverables += getDeliverableTargets(iTarget)
+      end
+      lLstDeliverables.uniq.each do |iDeliverable|
+        yield(iDeliverable)
+      end
+    end
+
+    # Visit a deliverable eventually with its dependencies
+    #
+    # Parameters:
+    # * *iDeliverable* (_Deliverable_): Deliverable to visit
+    # * *iIncludeDependencies* (_Boolean_): Do we visit dependencies also ?
+    # * *CodeBlock*: The code called for each deliverable found
+    # ** Parameters:
+    # *** *iDeliverable* (_Deliverable_): The deliverable
+    def visitDeliverable(iDeliverable, iIncludeDependencies)
+      if (iIncludeDependencies)
+        lDependencies = {}
+        getDeliverableDependencies(iDeliverable, lDependencies)
+        lDependencies.each do |iDepDeliverable, iNil|
+          logInfo "Found dependency #{iDepDeliverable.ID}"
+          visitDeliverable(iDepDeliverable, iIncludeDependencies) do |iDependencyDeliverable|
+            yield(iDependencyDeliverable)
+          end
+        end
+      end
+      yield(iDeliverable)
     end
 
   end

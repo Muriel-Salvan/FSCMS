@@ -23,6 +23,18 @@ module FSCMSTest
         end
       end
 
+      # Test that a single deliverable builds correctly with hierarchical ID
+      def testBuildSingleDeliverableHierarchicalID
+        setRepository('UniqueDeliverableHierarchicalID') do |iRepoDir|
+          runFSCMS(['Build', '--', '--target', 'TestType/TestID/SubTestID/SubSubTestID/0.1/TestDeliverable'])
+          lBuiltFileName = "#{iRepoDir}/TestType/TestID/SubTestID/SubSubTestID/0.1/Deliverables/TestDeliverable/BuiltFile"
+          assert(File.exists?(lBuiltFileName))
+          File.open(lBuiltFileName, 'r') do |iFile|
+            assert_equal($FSCMSTest_RepositoryToolsDir, iFile.read)
+          end
+        end
+      end
+
       # Test that a single deliverable builds correctly when identified with the versioned object only
       def testBuildSingleDeliverable_VersionedObjectPath
         setRepository('UniqueDeliverable') do |iRepoDir|
@@ -47,11 +59,47 @@ module FSCMSTest
         end
       end
 
+      # Test that a single deliverable with hierarchical ID builds correctly when identified with its ID
+      def testBuildSingleDeliverableHierarchicalID_ObjectPath
+        setRepository('UniqueDeliverableHierarchicalID') do |iRepoDir|
+          runFSCMS(['Build', '--', '--target', 'TestType/TestID/SubTestID/SubSubTestID'])
+          lBuiltFileName = "#{iRepoDir}/TestType/TestID/SubTestID/SubSubTestID/0.1/Deliverables/TestDeliverable/BuiltFile"
+          assert(File.exists?(lBuiltFileName))
+          File.open(lBuiltFileName, 'r') do |iFile|
+            assert_equal($FSCMSTest_RepositoryToolsDir, iFile.read)
+          end
+        end
+      end
+
+      # Test that a single deliverable with hierarchical ID builds correctly when identified with a part of its ID
+      def testBuildSingleDeliverableHierarchicalID_PartObjectID
+        setRepository('UniqueDeliverableHierarchicalID') do |iRepoDir|
+          runFSCMS(['Build', '--', '--target', 'TestType/TestID'])
+          lBuiltFileName = "#{iRepoDir}/TestType/TestID/SubTestID/SubSubTestID/0.1/Deliverables/TestDeliverable/BuiltFile"
+          assert(File.exists?(lBuiltFileName))
+          File.open(lBuiltFileName, 'r') do |iFile|
+            assert_equal($FSCMSTest_RepositoryToolsDir, iFile.read)
+          end
+        end
+      end
+
       # Test that a single deliverable builds correctly when identified with all objects
       def testBuildSingleDeliverable_AllObjects
         setRepository('UniqueDeliverable') do |iRepoDir|
           runFSCMS(['Build', '--', '--target', 'TestType'])
           lBuiltFileName = "#{iRepoDir}/TestType/TestID/0.1/Deliverables/TestDeliverable/BuiltFile"
+          assert(File.exists?(lBuiltFileName))
+          File.open(lBuiltFileName, 'r') do |iFile|
+            assert_equal($FSCMSTest_RepositoryToolsDir, iFile.read)
+          end
+        end
+      end
+
+      # Test that a single deliverable with hierarchical ID builds correctly when identified with all objects
+      def testBuildSingleDeliverableHierarchicalID_AllObjects
+        setRepository('UniqueDeliverableHierarchicalID') do |iRepoDir|
+          runFSCMS(['Build', '--', '--target', 'TestType'])
+          lBuiltFileName = "#{iRepoDir}/TestType/TestID/SubTestID/SubSubTestID/0.1/Deliverables/TestDeliverable/BuiltFile"
           assert(File.exists?(lBuiltFileName))
           File.open(lBuiltFileName, 'r') do |iFile|
             assert_equal($FSCMSTest_RepositoryToolsDir, iFile.read)
@@ -258,6 +306,34 @@ module FSCMSTest
                 :Property1 => 'Property1Value',
                 :Property2 => "#{iRepoDir}/TestType/TestID/0.1/Deliverables/TestDeliverable/Property2Value"
               }, eval(iFile.read))
+          end
+        end
+      end
+
+      # Test that a dependencies go at least at 2 levels
+      def testBuild2LevelsDependency
+        setRepository('DeliverablesProcessDependency') do |iRepoDir|
+          runFSCMS(['Build', '--', '--target', 'TestType/TestID3/0.1/TestDeliverable'])
+          lBuiltFileName = "#{iRepoDir}/TestType/TestID1/0.1/Deliverables/TestDeliverable/BuiltFile"
+          assert(File.exists?(lBuiltFileName))
+          File.open(lBuiltFileName, 'r') do |iFile|
+            assert_equal($FSCMSTest_RepositoryToolsDir, iFile.read)
+          end
+          lBuiltFileName = "#{iRepoDir}/TestType/TestID2/0.1/Deliverables/TestDeliverable/BuiltFile"
+          assert(File.exists?(lBuiltFileName))
+          File.open(lBuiltFileName, 'r') do |iFile|
+            assert_equal([
+                $FSCMSTest_RepositoryToolsDir,
+                "#{iRepoDir}/TestType/TestID1/0.1/Deliverables/TestDeliverable"
+              ], iFile.read.split("\n"))
+          end
+          lBuiltFileName = "#{iRepoDir}/TestType/TestID3/0.1/Deliverables/TestDeliverable/BuiltFile"
+          assert(File.exists?(lBuiltFileName))
+          File.open(lBuiltFileName, 'r') do |iFile|
+            assert_equal([
+                $FSCMSTest_RepositoryToolsDir,
+                "#{iRepoDir}/TestType/TestID2/0.1/Deliverables/TestDeliverable"
+              ], iFile.read.split("\n"))
           end
         end
       end

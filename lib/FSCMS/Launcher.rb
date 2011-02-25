@@ -78,7 +78,8 @@ module FSCMS
               lError = $!
             end
             if (lError == nil)
-              ioActionPlugin.instance_variable_set(:@Proxy, Proxy.new(Database.new(File.expand_path(Dir.getwd))))
+              lRootDir = File.expand_path(Dir.getwd)
+              ioActionPlugin.instance_variable_set(:@Proxy, Proxy.new(Database.new(lRootDir), lRootDir))
               ioActionPlugin.execute
             end
           end

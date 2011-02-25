@@ -1,5 +1,0 @@
-{
-  :Aliases => {
-    'TypeAlias' => 'TypeAliasValue'
-  }
-}
