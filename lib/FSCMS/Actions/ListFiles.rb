@@ -52,35 +52,54 @@ module FSCMS
           # The list of deliverables that are needed as manual processes, but are not built now
           # list< String >
           @LstManualMissingDeliverables = []
+          # The list of work files of any needed deliverable
+          # list< String>
+          @LstWorkFiles = []
+          # The list of temp files
+          # list< String >
+          @LstTempFiles = []
+          # The list of deliverable files created from an automatic process
+          # list< String >
+          @LstAutoDeliverableFiles = []
+          # The list of deliverables that are needed as automatic processes, but are not built now
+          # list< String >
+          @LstAutoMissingDeliverables = []
           @Proxy.visitDeliverable(iDeliverable, true) do |iVisitedDeliverable|
             listDeliverable(iVisitedDeliverable)
           end
-          lLstFiles[iDeliverable] = [
-            @LstSrcFiles.uniq.sort,
-            @LstManualDeliverableFiles.uniq.sort,
-            @LstManualMissingDeliverables.uniq.sort
-          ]
+          lLstFiles[iDeliverable.ID] = {
+            :Sources => @LstSrcFiles.uniq.sort,
+            :ManualDeliverables => @LstManualDeliverableFiles.uniq.sort,
+            :ManualMissingDeliverables => @LstManualMissingDeliverables.uniq.sort,
+            :Work => @LstWorkFiles.uniq.sort,
+            :Temp => @LstTempFiles.uniq.sort,
+            :AutoDeliverables => @LstAutoDeliverableFiles.uniq.sort,
+            :AutoMissingDeliverables => @LstAutoMissingDeliverables.uniq.sort
+          }
         end
         # Display and store
-        lLstFiles.each do |iDeliverable, iFilesInfo|
-          iLstSrcFiles, iLstManualDeliverableFiles, iLstManualMissingDeliverables = iFilesInfo
-          logMsg "== Deliverable #{iDeliverable.ID}
+        lLstFiles.each do |iDeliverableID, iFilesInfo|
+          logMsg "== Deliverable #{iDeliverableID}
 === Critical source files:
-  * #{iLstSrcFiles.join("\n  * ")}
+  * #{iFilesInfo[:Sources].join("\n  * ")}
 === Manual deliverable files:
-  * #{iLstManualDeliverableFiles.join("\n  * ")}
+  * #{iFilesInfo[:ManualDeliverables].join("\n  * ")}
 === Manual deliverables missing files now:
-  * #{iLstManualMissingDeliverables.join("\n  * ")}
+  * #{iFilesInfo[:ManualMissingDeliverables].join("\n  * ")}
+=== Work files:
+  * #{iFilesInfo[:Work].join("\n  * ")}
+=== Temporary files:
+  * #{iFilesInfo[:Temp].join("\n  * ")}
+=== Automatic deliverable files:
+  * #{iFilesInfo[:AutoDeliverables].join("\n  * ")}
+=== Automatic deliverables missing files now:
+  * #{iFilesInfo[:AutoMissingDeliverables].join("\n  * ")}
 
 "
         end
         if (@OutputFileName != nil)
-          lOutputFiles = {}
-          lLstFiles.each do |iDeliverable, iFilesInfo|
-            lOutputFiles[iDeliverable.ID] = iFilesInfo
-          end
           File.open(@OutputFileName, 'w') do |oFile|
-            oFile.write(lOutputFiles.inspect)
+            oFile.write(lLstFiles.inspect)
           end
         end
       end
@@ -117,6 +136,21 @@ module FSCMS
           else
             @LstManualMissingDeliverables << iDeliverable.ID
           end
+        else
+          # We get the automatic files too
+          if (File.exists?(iDeliverable.RealDir))
+            @LstAutoDeliverableFiles.concat(Dir.glob("#{iDeliverable.RealDir}/**/*"))
+          else
+            @LstAutoMissingDeliverables << iDeliverable.ID
+          end
+        end
+        # Get the Work files
+        if (File.exists?("#{lVODir}/Work"))
+          @LstWorkFiles.concat(Dir.glob("#{lVODir}/Work/**/*"))
+        end
+        # Get the Temporary files
+        if (File.exists?("#{lVODir}/Temp/#{iDeliverable.ID.split('/')[-1]}"))
+          @LstTempFiles.concat(Dir.glob("#{lVODir}/Temp/#{iDeliverable.ID.split('/')[-1]}/**/*"))
         end
       end
       
