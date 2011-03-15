@@ -10,6 +10,15 @@ RUtilAnts::Misc::initializeMisc
 require 'FSCMS/Proxy'
 require 'FSCMS/Database'
 
+# getbyte compatibility for Ruby 1.8
+if (RUBY_VERSION < '1.9')
+  class String
+    def getbyte(iIdx)
+      return self[iIdx]
+    end
+  end
+end
+
 module FSCMS
 
   class Launcher
