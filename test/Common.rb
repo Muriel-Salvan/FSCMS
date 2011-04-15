@@ -1,5 +1,5 @@
 #--
-# Copyright (c) 2009-2011 Muriel Salvan (murielsalvan@users.sourceforge.net)
+# Copyright (c) 2010 - 2011 Muriel Salvan (murielsalvan@users.sourceforge.net)
 # Licensed under the terms specified in LICENSE file. No warranty is provided.
 #++
 
@@ -8,6 +8,7 @@ require 'tmpdir'
 require 'fileutils'
 require 'rUtilAnts/Logging'
 RUtilAnts::Logging::initializeLogging('', '')
+activateLogDebug(false)
 require 'FSCMS/Launcher'
 
 $FSCMSTest_RepositoryToolsDir = "#{File.expand_path(File.dirname(__FILE__))}/RepositoryTools"
