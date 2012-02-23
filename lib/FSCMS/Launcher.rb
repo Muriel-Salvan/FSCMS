@@ -77,7 +77,7 @@ module FSCMS
           end
           # Access the Action
           access_plugin('Actions', @ActionName) do |ioActionPlugin|
-            lPluginOptionsParser = ioActionPlugin.getOptionsParser
+            lPluginOptionsParser = ioActionPlugin.get_options_parser
             begin
               lRemainingArgs = lPluginOptionsParser.parse(lActionArgs)
               if (!lRemainingArgs.empty?)

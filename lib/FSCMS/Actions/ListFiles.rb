@@ -13,7 +13,7 @@ module FSCMS
       #
       # Return::
       # * _OptionsParser_: The options parser
-      def getOptionsParser
+      def get_options_parser
         rOptions = OptionParser.new
 
         # The list of targets, as specified as options
