@@ -1,5 +1,5 @@
 #--
-# Copyright (c) 2010 - 2011 Muriel Salvan (murielsalvan@users.sourceforge.net)
+# Copyright (c) 2010 - 2012 Muriel Salvan (muriel@x-aeon.com)
 # Licensed under the terms specified in LICENSE file. No warranty is provided.
 #++
 
@@ -11,7 +11,7 @@ module FSCMS
 
       # Get the specific options parser
       #
-      # Return:
+      # Return::
       # * _OptionsParser_: The options parser
       def getOptionsParser
         rOptions = OptionParser.new
@@ -79,7 +79,7 @@ module FSCMS
         end
         # Display and store
         lLstFiles.each do |iDeliverableID, iFilesInfo|
-          logMsg "== Deliverable #{iDeliverableID}
+          log_msg "== Deliverable #{iDeliverableID}
 === Critical source files:
   * #{iFilesInfo[:Sources].join("\n  * ")}
 === Manual deliverable files:
@@ -108,7 +108,7 @@ module FSCMS
 
       # List files for a given deliverable.
       #
-      # Parameters:
+      # Parameters::
       # * *iDeliverable* (_Deliverable_): Deliverable to fetch
       def listDeliverable(iDeliverable)
         lVODir = iDeliverable.VersionedObject.RealDir

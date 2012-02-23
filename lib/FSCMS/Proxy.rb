@@ -1,5 +1,5 @@
 #--
-# Copyright (c) 2010 - 2011 Muriel Salvan (murielsalvan@users.sourceforge.net)
+# Copyright (c) 2010 - 2012 Muriel Salvan (muriel@x-aeon.com)
 # Licensed under the terms specified in LICENSE file. No warranty is provided.
 #++
 
@@ -13,7 +13,7 @@ module FSCMS
 
     # Constructor
     #
-    # Parameters:
+    # Parameters::
     # * *ioDB* (_Database_): The database of objects, versions, deliverables...
     # * *iRootDir* (_String_): The root directory
     def initialize(ioDB, iRootDir)
@@ -29,9 +29,9 @@ module FSCMS
     # * MusicTracks/RR126: All deliverables of all versions of a given object, or sub-objects
     # * MusicTracks: All music tracks, all versions, all deliverables
     #
-    # Parameters:
+    # Parameters::
     # * *iTarget* (_String_): The Target representation
-    # Return:
+    # Return::
     # * <em>list<Deliverable></em>: The corresponding list of deliverable targets
     def getDeliverableTargets(iTarget)
       rDeliverables = []
@@ -108,7 +108,7 @@ module FSCMS
     # Replace aliases and parse for references in this deliverable's context.
     # Get the list of deliverables that are a dependency for this deliverable.
     #
-    # Parameters:
+    # Parameters::
     # * *ioDeliverable* (_Deliverable_): The deliverable for which we replace aliases
     # * *oDependencies* (<em>map<Deliverable,nil></em>): The list of dependencies to be completed
     def getDeliverableDependencies(ioDeliverable, oDependencies)
@@ -126,9 +126,9 @@ module FSCMS
 
     # Get the aliases hash map from process parameters
     #
-    # Parameters:
+    # Parameters::
     # * *iProcessParams* (<em>map<Symbol,String></em>): The process parameters
-    # Return:
+    # Return::
     # * <em>map<String,String></em>: The corresponding aliases
     def params2aliases(iProcessParams)
       rAliases = {}
@@ -142,11 +142,11 @@ module FSCMS
 
     # Replace aliases in a string
     #
-    # Parameters:
+    # Parameters::
     # * *iStr* (_String_): The string containing aliases
     # * *iAliases* (<em>map<String,String></em>): The aliases definitions
     # * *oDependencies* (<em>map<Deliverable,nil></em>): The dependencies to be completed. If this is not nil, the properties in Ref aliases will be simply deleted from the string, as this should be used to know dependencies, and dependencies can't have properties set if they are not built yet. [optional = nil]
-    # Return:
+    # Return::
     # * _String_: The string without aliases
     def replaceAliases(iStr, iAliases, oDependencies = nil)
       rStr = iStr.clone
@@ -208,11 +208,11 @@ module FSCMS
 
     # Visit a list of deliverables based on a list of targets.
     #
-    # Parameters:
+    # Parameters::
     # * *iLstTargets* (<em>list<String></em>): The list of targets to consider
     # * *CodeBlock*: The code called for each deliverable found
-    # ** Parameters:
-    # *** *iDeliverable* (_Deliverable_): The deliverable
+    #   * Parameters::
+    #     * *iDeliverable* (_Deliverable_): The deliverable
     def foreachDeliverable(iLstTargets)
       # Compute the list of deliverables
       # list<Deliverable>
@@ -228,18 +228,18 @@ module FSCMS
 
     # Visit a deliverable eventually with its dependencies
     #
-    # Parameters:
+    # Parameters::
     # * *iDeliverable* (_Deliverable_): Deliverable to visit
     # * *iIncludeDependencies* (_Boolean_): Do we visit dependencies also ?
     # * *CodeBlock*: The code called for each deliverable found
-    # ** Parameters:
-    # *** *iDeliverable* (_Deliverable_): The deliverable
+    #   * Parameters::
+    #     * *iDeliverable* (_Deliverable_): The deliverable
     def visitDeliverable(iDeliverable, iIncludeDependencies)
       if (iIncludeDependencies)
         lDependencies = {}
         getDeliverableDependencies(iDeliverable, lDependencies)
         lDependencies.each do |iDepDeliverable, iNil|
-          logInfo "Found dependency #{iDepDeliverable.ID}"
+          log_info "Found dependency #{iDepDeliverable.ID}"
           visitDeliverable(iDepDeliverable, iIncludeDependencies) do |iDependencyDeliverable|
             yield(iDependencyDeliverable)
           end

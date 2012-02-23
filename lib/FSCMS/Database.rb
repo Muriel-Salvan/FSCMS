@@ -1,5 +1,5 @@
 #--
-# Copyright (c) 2010 - 2011 Muriel Salvan (murielsalvan@users.sourceforge.net)
+# Copyright (c) 2010 - 2012 Muriel Salvan (muriel@x-aeon.com)
 # Licensed under the terms specified in LICENSE file. No warranty is provided.
 #++
 
@@ -33,7 +33,7 @@ module FSCMS
 
       # Merge with a context from a directory
       #
-      # Parameters:
+      # Parameters::
       # * *iDirName* (_String_): Directory to merge context with
       def mergeWithDirContext(iDirName)
         lContextFileName = "#{iDirName}/metadata.conf.rb"
@@ -46,7 +46,7 @@ module FSCMS
 
       # Merge with a context
       #
-      # Parameters:
+      # Parameters::
       # * *iContext* (_Context_): The context to merge with
       def mergeWithContext(iContext)
         @Processes.merge!(iContext.Processes)
@@ -56,7 +56,7 @@ module FSCMS
 
       # Merge with a hashed context
       #
-      # Parameters:
+      # Parameters::
       # * *iContext* (<em>map<Symbol,Object></em>): The context to merge with
       def mergeWithHashContext(iContext)
         iContext.each do |iKey, iValue|
@@ -75,7 +75,7 @@ module FSCMS
 
       # Clone this Context
       #
-      # Return:
+      # Return::
       # * _Context_: New context, cloned
       def clone
         rContext = Context.new
@@ -104,7 +104,7 @@ module FSCMS
       
       # Constructor
       #
-      # Parameters:
+      # Parameters::
       # * *iRealDir* (_String_): The directory containing this type
       # * *iContext* (_Context_): The parent context
       # * *iID* (_String_): The ID
@@ -119,7 +119,7 @@ module FSCMS
 
       # Get objects
       #
-      # Return:
+      # Return::
       # * <em>map<list<String>,ObjectInfo></em>: Get the list of objects
       def getObjects
         readObjects
@@ -136,17 +136,17 @@ module FSCMS
           parseIDDirs(@RealDir, @Context).each do |iID, iIDInfo|
             iRealDir, iContext = iIDInfo
             @Objects[iID] = ObjectInfo.new(self, "#{@RealDir}/#{iRealDir}", iContext, "#{@ID}/#{iID.join('/')}")
-            logDebug "Found object #{@RealDir}/#{iRealDir}"
+            log_debug "Found object #{@RealDir}/#{iRealDir}"
           end
         end
       end
 
       # Get the list of ID directories with their corresponding real directories under a given root directory
       #
-      # Parameters:
+      # Parameters::
       # * *iRootDir* (_String_): The directory
       # * *iRootContext* (_Context_): The context of this root directory
-      # Return:
+      # Return::
       # * <em>map<list<String>,[String,Context]></em>: The list of IDs, and corresponding real directories and context
       def parseIDDirs(iRootDir, iRootContext)
         rIDs = {}
@@ -201,7 +201,7 @@ module FSCMS
       
       # Constructor
       #
-      # Parameters:
+      # Parameters::
       # * *iType* (_Type_): The parent type
       # * *iRealDir* (_String_): The real directory
       # * *iContext* (_Context_): The context of this object
@@ -213,7 +213,7 @@ module FSCMS
 
       # Get the list of versioned objects
       #
-      # Return:
+      # Return::
       # * <em>map<String,VersionedObject></em>: The list of versioned objects, per version
       def getVersionedObjects
         readVersionedObjects
@@ -235,7 +235,7 @@ module FSCMS
               # We have a version directory
               lVersion = lDirToken.split(' ')[0]
               @VersionedObjects[lVersion] = VersionedObject.new(self, "#{@RealDir}/#{lDirToken}", "#{@ID}/#{lVersion}")
-              logDebug "Found versioned object #{@RealDir}/#{lDirToken}"
+              log_debug "Found versioned object #{@RealDir}/#{lDirToken}"
             end
           end
         end
@@ -264,7 +264,7 @@ module FSCMS
       
       # Constructor
       #
-      # Parameters:
+      # Parameters::
       # * *iObject* (_ObjectInfo_): The parent object
       # * *iRealDir* (_String_): The directory containing this versioned object
       # * *iID* (_String_): The ID
@@ -284,7 +284,7 @@ module FSCMS
 
       # Get deliverables
       #
-      # Return:
+      # Return::
       # * <em>map<String,Deliverable></em>: The list of deliverables, per deliverable name
       def getDeliverables
         readDeliverables
@@ -310,7 +310,7 @@ module FSCMS
                 lContext.mergeWithHashContext(@Context.Properties[:Deliverables][lDeliverableName])
               end
               @Deliverables[lDeliverableName] = Deliverable.new(self, "#{@RealDir}/Deliverables/#{lDirToken}", lContext, "#{@ID}/#{lDeliverableName}")
-              logDebug "Found deliverable from file system #{@RealDir}/Deliverables/#{lDirToken}"
+              log_debug "Found deliverable from file system #{@RealDir}/Deliverables/#{lDirToken}"
             end
           end
           # Then from the config file
@@ -320,7 +320,7 @@ module FSCMS
                 lContext = @Context.clone
                 lContext.mergeWithHashContext(iDeliverableContext)
                 @Deliverables[iDeliverableName] = Deliverable.new(self, "#{@RealDir}/Deliverables/#{iDeliverableName}", lContext, "#{@ID}/#{iDeliverableName}")
-                logDebug "Found deliverable from metadata #{@RealDir}/Deliverables/#{iDeliverableName}"
+                log_debug "Found deliverable from metadata #{@RealDir}/Deliverables/#{iDeliverableName}"
               end
             end
           end
@@ -350,7 +350,7 @@ module FSCMS
       
       # Constructor
       #
-      # Parameters:
+      # Parameters::
       # * *iVersionedObject* (_VersionedObject_): The parent versioned object
       # * *iRealDir* (_String_): The real directory containing this deliverable
       # * *iContext* (_Context_): The deliverable context
@@ -368,7 +368,7 @@ module FSCMS
 
       # Get the process info associated to this deliverable
       #
-      # Return:
+      # Return::
       # * <em>map<Symbol,Object></em>: The process info, or nil if none
       # * <em>map<Symbol,Object></em>: The process parameters
       def getProcessInfo
@@ -395,7 +395,7 @@ module FSCMS
 
     # Constructor
     #
-    # Parameters:
+    # Parameters::
     # * *iRootDir* (_String_): The root directory containing the files
     def initialize(iRootDir)
       @RootDir = iRootDir
@@ -408,9 +408,9 @@ module FSCMS
 
     # Get the list of objects for a given type name
     #
-    # Parameters:
+    # Parameters::
     # * *iTypeName* (_String_): The type
-    # Return:
+    # Return::
     # * <em>map<list<String>,ObjectInfo></em>: The list of objects, per ID
     def getObjects(iTypeName)
       return getType(iTypeName).getObjects
@@ -418,10 +418,10 @@ module FSCMS
 
     # Get the list of versioned objects for a given type name and object ID
     #
-    # Parameters:
+    # Parameters::
     # * *iTypeName* (_String_): The type
     # * *iObjectID* (_String_): The object ID
-    # Return:
+    # Return::
     # * <em>map<String,VersionedObject></em>: The list of versioned objects, per version
     def getVersionedObjects(iTypeName, iObjectID)
       lObjects = getObjects(iTypeName)
@@ -434,11 +434,11 @@ module FSCMS
 
     # Get the list of deliverables for a given type name, object ID, version
     #
-    # Parameters:
+    # Parameters::
     # * *iTypeName* (_String_): The type
     # * *iObjectID* (_String_): The object ID
     # * *iVersion* (_String_): The version
-    # Return:
+    # Return::
     # * <em>map<String,Deliverable></em>: The list of deliverables, per name
     def getDeliverables(iTypeName, iObjectID, iVersion)
       lVersionedObjects = getVersionedObjects(iTypeName, iObjectID)
@@ -451,12 +451,12 @@ module FSCMS
 
     # Get the specified deliverable
     #
-    # Parameters:
+    # Parameters::
     # * *iTypeName* (_String_): The type
     # * *iObjectID* (_String_): The object ID
     # * *iVersion* (_String_): The version
     # * *iDeliverableName* (_String_): The deliverable name
-    # Return:
+    # Return::
     # * _Deliverable_: The deliverable
     def getDeliverable(iTypeName, iObjectID, iVersion, iDeliverableName)
       lDeliverables = getDeliverables(iTypeName, iObjectID, iVersion)
@@ -472,9 +472,9 @@ module FSCMS
     # Get a given type
     # Raises an exception if the type does not exist
     #
-    # Parameters:
+    # Parameters::
     # * *iTypeName* (_String_): The type name to get
-    # Return:
+    # Return::
     # * _Type_: The corresponding type
     def getType(iTypeName)
       readTypes

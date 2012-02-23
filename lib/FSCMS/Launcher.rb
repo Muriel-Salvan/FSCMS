@@ -1,12 +1,12 @@
 #--
-# Copyright (c) 2010 - 2011 Muriel Salvan (murielsalvan@users.sourceforge.net)
+# Copyright (c) 2010 - 2012 Muriel Salvan (muriel@x-aeon.com)
 # Licensed under the terms specified in LICENSE file. No warranty is provided.
 #++
 
 require 'optparse'
 require 'date'
 require 'rUtilAnts/Misc'
-RUtilAnts::Misc::initializeMisc
+RUtilAnts::Misc::install_misc_on_object
 require 'FSCMS/Proxy'
 require 'FSCMS/Database'
 
@@ -46,9 +46,9 @@ module FSCMS
 
     # Execute command line arguments
     #
-    # Parameters:
+    # Parameters::
     # * *iArgs* (<em>list<String></em>): Command line arguments
-    # Return:
+    # Return::
     # * _Integer_: The error code to return to the terminal
     def execute(iArgs)
       rResult = 0
@@ -73,10 +73,10 @@ module FSCMS
           puts @Options
         else
           if (@Debug)
-            activateLogDebug(true)
+            activate_log_debug(true)
           end
           # Access the Action
-          accessPlugin('Actions', @ActionName) do |ioActionPlugin|
+          access_plugin('Actions', @ActionName) do |ioActionPlugin|
             lPluginOptionsParser = ioActionPlugin.getOptionsParser
             begin
               lRemainingArgs = lPluginOptionsParser.parse(lActionArgs)
@@ -96,10 +96,10 @@ module FSCMS
       end
 
       if (lError != nil)
-        logErr "Error encountered: #{lError}"
+        log_err "Error encountered: #{lError}"
         rResult = 1
       end
-      logInfo "Elapsed milliseconds: #{((DateTime.now-lBeginTime)*86400000).to_i}"
+      log_info "Elapsed milliseconds: #{((DateTime.now-lBeginTime)*86400000).to_i}"
 
       return rResult
     end
@@ -110,15 +110,15 @@ module FSCMS
     def parsePlugins
       lLibDir = File.expand_path(File.dirname(__FILE__))
       require 'rUtilAnts/Plugins'
-      RUtilAnts::Plugins::initializePlugins
-      parsePluginsFromDir('Actions', "#{lLibDir}/Actions", 'FSCMS::Actions')
+      RUtilAnts::Plugins::install_plugins_on_object
+      parse_plugins_from_dir('Actions', "#{lLibDir}/Actions", 'FSCMS::Actions')
     end
 
     # Split parameters, before and after the first -- encountered
     #
-    # Parameters:
+    # Parameters::
     # * *iParameters* (<em>list<String></em>): The parameters
-    # Return:
+    # Return::
     # * <em>list<String></em>: The first part
     # * <em>list<String></em>: The second part
     def splitParameters(iParameters)

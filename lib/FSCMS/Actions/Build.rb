@@ -1,5 +1,5 @@
 #--
-# Copyright (c) 2010 - 2011 Muriel Salvan (murielsalvan@users.sourceforge.net)
+# Copyright (c) 2010 - 2012 Muriel Salvan (muriel@x-aeon.com)
 # Licensed under the terms specified in LICENSE file. No warranty is provided.
 #++
 
@@ -13,7 +13,7 @@ module FSCMS
 
       # Get the specific options parser
       #
-      # Return:
+      # Return::
       # * _OptionsParser_: The options parser
       def getOptionsParser
         rOptions = OptionParser.new
@@ -53,22 +53,22 @@ module FSCMS
       # Build a given deliverable.
       # Prerequisite: its dependencies have been built.
       #
-      # Parameters:
+      # Parameters::
       # * *ioDeliverable* (_Deliverable_): Deliverable to build
       def buildDeliverable(ioDeliverable)
         if ((!@ForceBuild) and
             (File.exists?(ioDeliverable.RealDir)))
-          logInfo "Deliverable #{ioDeliverable.ID} is already built."
+          log_info "Deliverable #{ioDeliverable.ID} is already built."
         else
           lProcessInfo, lProcessParams = ioDeliverable.getProcessInfo
           if (lProcessInfo == nil)
             # No process to build it.
             # Tell the user it has to do it by hand.
-            logMsg "No process defined to build deliverable #{ioDeliverable.ID}. Build it manually and press Enter to continue."
+            log_msg "No process defined to build deliverable #{ioDeliverable.ID}. Build it manually and press Enter to continue."
             $stdin.gets
           else
             # Execute the building process
-            logInfo "Build deliverable #{ioDeliverable.ID} ..."
+            log_info "Build deliverable #{ioDeliverable.ID} ..."
             lAliases = ioDeliverable.Context.Aliases.merge(@Proxy.params2aliases(lProcessParams))
             lProcessDir = lProcessInfo[:Dir] || ioDeliverable.RealDir
             lRealProcessDir = @Proxy.replaceAliases(lProcessDir, lAliases)
@@ -80,14 +80,14 @@ module FSCMS
             # Create the destination dir
             FileUtils::mkdir_p(ioDeliverable.RealDir)
             # Execute the process
-            changeDir(lRealProcessDir) do
-              logDebug "Execute command \"#{lRealCmd}\" from \"#{lRealProcessDir}\"..."
+            change_dir(lRealProcessDir) do
+              log_debug "Execute command \"#{lRealCmd}\" from \"#{lRealProcessDir}\"..."
               lSuccess = system(lRealCmd)
               lErrorCode = $?
               if (lSuccess != true)
                 raise RuntimeError.new("Error while executing \"#{lRealCmd}\" from \"#{lRealProcessDir}\": #{lErrorCode}")
               end
-              logDebug "Command \"#{lRealCmd}\" from \"#{lRealProcessDir}\" completed."
+              log_debug "Command \"#{lRealCmd}\" from \"#{lRealProcessDir}\" completed."
             end
             # Generate properties if needed
             if (lProcessInfo[:Output] != nil)
